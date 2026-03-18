@@ -116,8 +116,8 @@ export interface InstanceContext {
   }[];
   services: {
     id: number;
-    code: string;
-    description: string;
+    name: string;
+    status: string;
   }[];
 }
 

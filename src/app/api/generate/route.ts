@@ -14,7 +14,7 @@ Roles de aprobación: Jefe directo, Jefe de segundo nivel, Aprobador designado`
   const departments = context.departments.map(d => `${d.name} (${d.usersCount} usuarios)`).join(", ")
   const agents = context.users.filter(u => u.isAgent).map(u => `${u.firstName} ${u.lastName}`).join(", ")
   const ticketPatterns = context.tickets.map(t => `"${t.subject}" (${t.status})`).join(", ")
-  const services = context.services.map(s => `${s.code}: ${s.description}`).join(", ")
+  const services = context.services.map(s => s.name).join(", ")
 
   return `Departamentos: ${departments || "No configurados"}
 Agentes: ${agents || "No hay agentes"}
