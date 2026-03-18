@@ -10,10 +10,62 @@ interface RedashQueryResult {
   };
 }
 
+interface RedashJobResponse {
+  job: {
+    id: string;
+    status: number; // 1=pending, 2=started, 3=success, 4=failure
+    query_result_id: number | null;
+    error: string;
+  };
+}
+
+function isJobResponse(
+  data: RedashQueryResult | RedashJobResponse
+): data is RedashJobResponse {
+  return "job" in data;
+}
+
+async function pollJobResult(jobId: string): Promise<Record<string, unknown>[]> {
+  const maxAttempts = 15;
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+
+    const res = await fetch(`${REDASH_BASE_URL}/api/jobs/${jobId}`, {
+      headers: { Authorization: `Key ${REDASH_API_KEY}` },
+    });
+
+    if (!res.ok) throw new Error(`Job poll failed: ${res.status}`);
+
+    const data = await res.json();
+    const job = data.job;
+
+    if (job.status === 3 && job.query_result_id) {
+      const resultRes = await fetch(
+        `${REDASH_BASE_URL}/api/query_results/${job.query_result_id}`,
+        { headers: { Authorization: `Key ${REDASH_API_KEY}` } }
+      );
+      if (!resultRes.ok) throw new Error(`Result fetch failed: ${resultRes.status}`);
+      const resultData: RedashQueryResult = await resultRes.json();
+      return resultData.query_result.data.rows;
+    }
+
+    if (job.status === 4) {
+      throw new Error(`Redash query failed: ${job.error}`);
+    }
+  }
+  throw new Error("Redash query timed out");
+}
+
 export async function executeRedashQuery(
   queryId: number,
   parameters: Record<string, unknown> = {}
 ): Promise<Record<string, unknown>[]> {
+  // Redash expects parameters as strings
+  const stringParams: Record<string, string> = {};
+  for (const [key, value] of Object.entries(parameters)) {
+    stringParams[key] = String(value);
+  }
+
   const res = await fetch(
     `${REDASH_BASE_URL}/api/queries/${queryId}/results`,
     {
@@ -22,7 +74,7 @@ export async function executeRedashQuery(
         Authorization: `Key ${REDASH_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ parameters, max_age: 1800 }),
+      body: JSON.stringify({ parameters: stringParams, max_age: 1800 }),
     }
   );
 
@@ -30,7 +82,12 @@ export async function executeRedashQuery(
     throw new Error(`Redash query ${queryId} failed: ${res.status}`);
   }
 
-  const data: RedashQueryResult = await res.json();
+  const data: RedashQueryResult | RedashJobResponse = await res.json();
+
+  if (isJobResponse(data)) {
+    return pollJobResult(data.job.id);
+  }
+
   return data.query_result.data.rows;
 }
 
@@ -63,9 +120,6 @@ export interface InstanceContext {
   }[];
 }
 
-// These query IDs need to be created in Redash with parameterized queries.
-// Each query should accept an `instanceId` parameter.
-// Set these IDs in .env.local after creating the queries.
 export const REDASH_QUERY_IDS = {
   users: Number(process.env.REDASH_QUERY_USERS) || 0,
   departments: Number(process.env.REDASH_QUERY_DEPARTMENTS) || 0,
