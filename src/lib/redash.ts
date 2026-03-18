@@ -92,6 +92,7 @@ export async function executeRedashQuery(
 }
 
 export interface InstanceContext {
+  instanceName: string;
   users: {
     id: number;
     firstName: string;
@@ -121,6 +122,7 @@ export interface InstanceContext {
 }
 
 export const REDASH_QUERY_IDS = {
+  instanceName: Number(process.env.REDASH_QUERY_INSTANCE_NAME) || 0,
   users: Number(process.env.REDASH_QUERY_USERS) || 0,
   departments: Number(process.env.REDASH_QUERY_DEPARTMENTS) || 0,
   tickets: Number(process.env.REDASH_QUERY_TICKETS) || 0,
@@ -132,7 +134,10 @@ export async function fetchInstanceContext(
 ): Promise<InstanceContext> {
   const params = { instanceId };
 
-  const [users, departments, tickets, services] = await Promise.all([
+  const [instanceRows, users, departments, tickets, services] = await Promise.all([
+    REDASH_QUERY_IDS.instanceName
+      ? executeRedashQuery(REDASH_QUERY_IDS.instanceName, params)
+      : Promise.resolve([]),
     REDASH_QUERY_IDS.users
       ? executeRedashQuery(REDASH_QUERY_IDS.users, params)
       : Promise.resolve([]),
@@ -147,7 +152,12 @@ export async function fetchInstanceContext(
       : Promise.resolve([]),
   ]);
 
+  const instanceName = instanceRows.length > 0
+    ? String(instanceRows[0].name)
+    : `Comunidad #${instanceId}`;
+
   return {
+    instanceName,
     users: users as unknown as InstanceContext["users"],
     departments: departments as unknown as InstanceContext["departments"],
     tickets: tickets as unknown as InstanceContext["tickets"],

@@ -39,7 +39,7 @@ export default function WorkflowComposer() {
         return
       }
       setEmpresa({
-        nombre: `Comunidad #${instanceId}`,
+        nombre: data.instanceName || `Comunidad #${instanceId}`,
         departamentos: data.departments?.map((d: { name: string }) => d.name) || [],
         usuarios: data.users?.length || 0,
         agentes: data.users?.filter((u: { isAgent: boolean }) => u.isAgent).length || 0,
