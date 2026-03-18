@@ -40,6 +40,7 @@ export function WorkflowSidebar({
   isLoadingInstance
 }: WorkflowSidebarProps) {
   const [inputText, setInputText] = useState("")
+  const [templatesOpen, setTemplatesOpen] = useState(false)
 
   const handleSubmit = async () => {
     if (!inputText.trim() || isGenerating) return
@@ -73,38 +74,58 @@ export function WorkflowSidebar({
         </div>
       </div>
 
-      {/* Templates */}
-      <div className="px-5 py-4 border-b border-[#E5E7EB]">
-        <p className="text-[11px] uppercase text-[#9CA3AF] font-semibold mb-3 tracking-wider">
-          Templates
-        </p>
-        <div className="flex flex-col gap-1.5">
-          {TEMPLATES.map((template) => (
-            <button
-              key={template.id}
-              onClick={() => onSelectTemplate(template.workflow)}
-              className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-150 ${
-                selectedTemplateId === template.id
-                  ? "bg-[#EEF0FB] border border-[#496BE3]/30 shadow-sm"
-                  : "bg-white border border-transparent hover:bg-[#F8F9FA] hover:border-[#E5E7EB]"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="text-lg">{template.emoji}</span>
-                <div>
-                  <p className={`text-[12.5px] font-medium ${
-                    selectedTemplateId === template.id ? "text-[#496BE3]" : "text-[#1A1A2E]"
-                  }`}>
-                    {template.title}
-                  </p>
-                  <p className="text-[10.5px] text-[#9CA3AF]">
-                    {template.description}
-                  </p>
+      {/* Templates (collapsible) */}
+      <div className="border-b border-[#E5E7EB]">
+        <button
+          onClick={() => setTemplatesOpen(!templatesOpen)}
+          className="w-full flex items-center justify-between px-5 py-3 hover:bg-[#F8F9FA] transition-colors"
+        >
+          <p className="text-[11px] uppercase text-[#9CA3AF] font-semibold tracking-wider">
+            Templates
+          </p>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#9CA3AF"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`transition-transform duration-200 ${templatesOpen ? "rotate-180" : ""}`}
+          >
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        {templatesOpen && (
+          <div className="px-5 pb-4 flex flex-col gap-1.5">
+            {TEMPLATES.map((template) => (
+              <button
+                key={template.id}
+                onClick={() => onSelectTemplate(template.workflow)}
+                className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-150 ${
+                  selectedTemplateId === template.id
+                    ? "bg-[#EEF0FB] border border-[#496BE3]/30 shadow-sm"
+                    : "bg-white border border-transparent hover:bg-[#F8F9FA] hover:border-[#E5E7EB]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-lg">{template.emoji}</span>
+                  <div>
+                    <p className={`text-[12.5px] font-medium ${
+                      selectedTemplateId === template.id ? "text-[#496BE3]" : "text-[#1A1A2E]"
+                    }`}>
+                      {template.title}
+                    </p>
+                    <p className="text-[10.5px] text-[#9CA3AF]">
+                      {template.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Instance selector + Company snapshot */}
