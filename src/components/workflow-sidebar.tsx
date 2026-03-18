@@ -167,41 +167,25 @@ export function WorkflowSidebar({
 
       {/* Chat messages */}
       <div className="flex-1 overflow-auto px-5 py-4">
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center gap-3 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-[#EEF0FB] flex items-center justify-center">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#496BE3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-            </div>
-            <div>
-              <p className="text-[13px] font-semibold text-[#1A1A2E]">Describe tu flujo de trabajo</p>
-              <p className="text-[11.5px] text-[#9CA3AF] mt-1 leading-relaxed max-w-[200px]">
-                Cuéntame qué proceso quieres automatizar y lo generaré para ti.
+        <div className="space-y-3">
+          {messages.map((msg) => (
+            <div key={msg.id}>
+              <p className={`text-[10px] font-medium mb-1 ${msg.role === "user" ? "text-[#9CA3AF]" : "text-[#496BE3]"}`}>
+                {msg.role === "user" ? "Tú" : "Asistente"}
               </p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {messages.map((msg) => (
-              <div key={msg.id}>
-                <p className={`text-[10px] font-medium mb-1 ${msg.role === "user" ? "text-[#9CA3AF]" : "text-[#496BE3]"}`}>
-                  {msg.role === "user" ? "Tú" : "Asistente"}
-                </p>
-                <div
-                  className={`px-3 py-2.5 rounded-xl text-[12px] leading-relaxed ${
-                    msg.role === "user"
-                      ? "bg-[#F3F4F6] text-[#1A1A2E]"
-                      : "bg-[#EEF0FB] text-[#496BE3] border border-[#496BE3]/10"
-                  }`}
-                >
-                  {msg.content}
-                </div>
+              <div
+                className={`px-3 py-2.5 rounded-xl text-[12px] leading-relaxed ${
+                  msg.role === "user"
+                    ? "bg-[#F3F4F6] text-[#1A1A2E]"
+                    : "bg-[#EEF0FB] text-[#496BE3] border border-[#496BE3]/10"
+                }`}
+              >
+                {msg.content}
               </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+            </div>
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Input area */}
