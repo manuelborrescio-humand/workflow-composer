@@ -123,7 +123,7 @@ export function WorkflowTopbar({
               {"📋"} Ver datos empresa
             </button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-5xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 {"🏢"} {empresaData?.nombre || "Sin comunidad cargada"}
@@ -138,7 +138,7 @@ export function WorkflowTopbar({
                   <div className="space-y-1 max-h-60 overflow-auto">
                     {empresaData.servicios.map((s) => (
                       <div key={s.name} className="flex justify-between text-[11px] gap-2">
-                        <span className="text-muted-foreground truncate">{s.name}</span>
+                        <span className="text-muted-foreground">{s.name}</span>
                         <span className={`text-[9px] font-medium shrink-0 px-1.5 py-0.5 rounded-full ${
                           s.status === "ENABLED" ? "bg-[#F0FDF4] text-[#16A34A]" : "bg-muted text-muted-foreground"
                         }`}>
