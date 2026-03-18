@@ -108,9 +108,9 @@ Respondé SOLO con el JSON del Workflow.`
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error("Anthropic API error:", errorData)
+      console.error("Anthropic API error:", response.status, errorData)
       return NextResponse.json(
-        { error: "Error al comunicarse con la API de Anthropic" },
+        { error: `Error API (${response.status}): ${errorData}` },
         { status: 500 }
       )
     }
