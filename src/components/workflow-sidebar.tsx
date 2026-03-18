@@ -175,8 +175,27 @@ export function WorkflowSidebar({
       </div>
 
       {/* Chat messages */}
-      <div className="flex-1 overflow-auto px-5 py-4">
-        <div className="space-y-3">
+      <div className="flex-1 overflow-auto px-4 py-4 flex flex-col">
+        {messages.length === 0 && (
+          <button
+            onClick={() => {
+              if (textareaRef.current) {
+                textareaRef.current.focus()
+                const example = "Cuando un empleado solicita vacaciones, que lo apruebe su jefe directo."
+                setInputText(example)
+                textareaRef.current.style.height = "auto"
+                textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + "px"
+              }
+            }}
+            className="w-full text-left px-4 py-3.5 rounded-xl border border-dashed border-[#D1D5DB] hover:border-[#496BE3]/40 hover:bg-[#EEF0FB]/30 transition-all duration-150 group"
+          >
+            <p className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wider mb-1.5 group-hover:text-[#496BE3]">Ejemplo</p>
+            <p className="text-[12.5px] text-[#6B7280] leading-relaxed group-hover:text-[#496BE3]">
+              Cuando un empleado solicita vacaciones, que lo apruebe su jefe directo.
+            </p>
+          </button>
+        )}
+        <div className="space-y-3 mt-auto">
           {messages.map((msg) => (
             <div key={msg.id}>
               <p className={`text-[10px] font-medium mb-1 ${msg.role === "user" ? "text-[#9CA3AF]" : "text-[#496BE3]"}`}>
@@ -196,6 +215,7 @@ export function WorkflowSidebar({
           <div ref={messagesEndRef} />
         </div>
       </div>
+
 
       {/* Input area */}
       <div className="px-4 py-3 border-t border-[#E5E7EB] bg-white">
