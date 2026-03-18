@@ -16,6 +16,7 @@ export interface EmpresaFullData {
   departamentos: { name: string; usersCount: number }[]
   agentes: { firstName: string; lastName: string; email: string }[]
   tickets: { subject: string; status: string; count: number }[]
+  servicios: { name: string; status: string }[]
 }
 
 interface WorkflowTopbarProps {
@@ -129,7 +130,27 @@ export function WorkflowTopbar({
               </DialogTitle>
             </DialogHeader>
             {empresaData ? (
-              <div className="grid grid-cols-3 gap-4 mt-4">
+              <div className="grid grid-cols-4 gap-4 mt-4">
+                <div>
+                  <h3 className="text-[12px] font-bold text-foreground mb-2">
+                    Servicios ({empresaData.servicios.length})
+                  </h3>
+                  <div className="space-y-1 max-h-60 overflow-auto">
+                    {empresaData.servicios.map((s) => (
+                      <div key={s.name} className="flex justify-between text-[11px] gap-2">
+                        <span className="text-muted-foreground truncate">{s.name}</span>
+                        <span className={`text-[9px] font-medium shrink-0 px-1.5 py-0.5 rounded-full ${
+                          s.status === "ENABLED" ? "bg-[#F0FDF4] text-[#16A34A]" : "bg-muted text-muted-foreground"
+                        }`}>
+                          {s.status === "ENABLED" ? "Activo" : "Inactivo"}
+                        </span>
+                      </div>
+                    ))}
+                    {empresaData.servicios.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground italic">Sin servicios</p>
+                    )}
+                  </div>
+                </div>
                 <div>
                   <h3 className="text-[12px] font-bold text-foreground mb-2">
                     Departamentos ({empresaData.departamentos.length})

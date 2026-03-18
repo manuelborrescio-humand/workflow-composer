@@ -58,6 +58,9 @@ export default function WorkflowComposer() {
           firstName: a.firstName, lastName: a.lastName, email: a.email
         })),
         tickets: data.tickets || [],
+        servicios: (data.services || []).map((s: { name: string; status: string }) => ({
+          name: s.name, status: s.status
+        })),
       })
       toast.success(`Datos cargados: ${data.users?.length || 0} usuarios, ${data.departments?.length || 0} departamentos`)
     } catch {
