@@ -87,7 +87,7 @@ export function WorkflowTopbar({
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
-            className="text-[14px] font-semibold text-[#1A1A2E] bg-[#F8F9FA] px-3 py-1.5 rounded-lg border border-[#6C63FF] focus:outline-none focus:ring-2 focus:ring-[#6C63FF]/20"
+            className="text-[14px] font-semibold text-[#1A1A2E] bg-[#F8F9FA] px-3 py-1.5 rounded-lg border border-[#496BE3] focus:outline-none focus:ring-2 focus:ring-[#496BE3]/20"
             autoFocus
           />
         ) : (
@@ -227,7 +227,7 @@ export function WorkflowTopbar({
         <button
           onClick={onPublish}
           disabled={!workflow}
-          className="px-5 py-2 text-[12px] font-semibold text-white bg-[#6C63FF] rounded-lg hover:bg-[#5B54E8] transition-all shadow-sm shadow-[#6C63FF]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+          className="px-5 py-2 text-[12px] font-semibold text-white bg-[#496BE3] rounded-lg hover:bg-[#3D5CC7] transition-all shadow-sm shadow-[#496BE3]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
           Publicar
         </button>
