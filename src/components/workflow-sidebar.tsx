@@ -42,6 +42,15 @@ export function WorkflowSidebar({
   const [inputText, setInputText] = useState("")
   const [templatesOpen, setTemplatesOpen] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputText(e.target.value)
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto"
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + "px"
+    }
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -189,26 +198,42 @@ export function WorkflowSidebar({
       </div>
 
       {/* Input area */}
-      <div className="px-5 py-4 border-t border-[#E5E7EB] bg-white">
-        <textarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={"Describe el flujo de trabajo...\n\nEj: Cuando un empleado solicita vacaciones, que lo apruebe su jefe directo."}
-          className="w-full h-[120px] px-3 py-2.5 bg-[#F8F9FA] border border-[#E5E7EB] rounded-xl text-[12.5px] text-[#1A1A2E] resize-none placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#496BE3]/20 focus:border-[#496BE3] transition-all leading-relaxed"
-          disabled={isGenerating}
-        />
-        <button
-          onClick={handleSubmit}
-          disabled={!inputText.trim() || isGenerating}
-          className={`w-full mt-2.5 py-2.5 px-4 rounded-xl text-[13px] font-semibold transition-all duration-150 ${
-            inputText.trim() && !isGenerating
-              ? "bg-[#496BE3] text-white hover:bg-[#3D5CC7] shadow-md shadow-[#496BE3]/20"
-              : "bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed"
-          }`}
-        >
-          {isGenerating ? "Generando..." : "Generar workflow"}
-        </button>
+      <div className="px-4 py-3 border-t border-[#E5E7EB] bg-white">
+        <div className={`flex items-end gap-2 bg-[#F8F9FA] border rounded-xl px-3 py-2 transition-all ${
+          isGenerating ? "border-[#E5E7EB]" : "border-[#E5E7EB] focus-within:ring-2 focus-within:ring-[#496BE3]/20 focus-within:border-[#496BE3]"
+        }`}>
+          <textarea
+            ref={textareaRef}
+            value={inputText}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Describe el flujo de trabajo..."
+            rows={1}
+            className="flex-1 bg-transparent text-[12.5px] text-[#1A1A2E] resize-none placeholder:text-[#9CA3AF] focus:outline-none leading-relaxed"
+            style={{ minHeight: "22px", maxHeight: "120px" }}
+            disabled={isGenerating}
+          />
+          <button
+            onClick={handleSubmit}
+            disabled={!inputText.trim() || isGenerating}
+            className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 ${
+              inputText.trim() && !isGenerating
+                ? "bg-[#496BE3] text-white hover:bg-[#3D5CC7]"
+                : "bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed"
+            }`}
+          >
+            {isGenerating ? (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+            ) : (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   )
