@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { WorkflowTopbar } from "@/components/workflow-topbar"
+import { WorkflowTopbar, type EmpresaFullData } from "@/components/workflow-topbar"
 import { WorkflowSidebar } from "@/components/workflow-sidebar"
 import { WorkflowCanvas } from "@/components/workflow-canvas"
 import { DEFAULT_WORKFLOW, TEMPLATES, type Workflow, type ChatMessage } from "@/lib/workflow-types"
@@ -26,6 +26,7 @@ export default function WorkflowComposer() {
 
   const [instanceId, setInstanceId] = useState("")
   const [empresa, setEmpresa] = useState<EmpresaData | undefined>()
+  const [empresaFull, setEmpresaFull] = useState<EmpresaFullData | undefined>()
   const [isLoadingInstance, setIsLoadingInstance] = useState(false)
 
   const handleLoadInstance = useCallback(async () => {
@@ -38,12 +39,25 @@ export default function WorkflowComposer() {
         toast.error(data.error)
         return
       }
+      const nombre = data.instanceName || `Comunidad #${instanceId}`
+      const users = data.users || []
+      const departments = data.departments || []
+      const agents = users.filter((u: { isAgent: boolean }) => u.isAgent)
+
       setEmpresa({
-        nombre: data.instanceName || `Comunidad #${instanceId}`,
-        departamentos: data.departments?.map((d: { name: string }) => d.name) || [],
-        usuarios: data.users?.length || 0,
-        agentes: data.users?.filter((u: { isAgent: boolean }) => u.isAgent).length || 0,
+        nombre,
+        departamentos: departments.map((d: { name: string }) => d.name),
+        usuarios: users.length,
+        agentes: agents.length,
         servicios: data.services?.length || 0,
+      })
+      setEmpresaFull({
+        nombre,
+        departamentos: departments,
+        agentes: agents.map((a: { firstName: string; lastName: string; email: string }) => ({
+          firstName: a.firstName, lastName: a.lastName, email: a.email
+        })),
+        tickets: data.tickets || [],
       })
       toast.success(`Datos cargados: ${data.users?.length || 0} usuarios, ${data.departments?.length || 0} departamentos`)
     } catch {
@@ -133,6 +147,7 @@ export default function WorkflowComposer() {
         isDraft={isDraft}
         onPublish={handlePublish}
         workflow={workflow}
+        empresaData={empresaFull}
       />
       <div className="flex flex-1 overflow-hidden">
         <WorkflowSidebar

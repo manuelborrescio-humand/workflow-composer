@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { ArrowLeft, ChevronDown, FileJson, X } from "lucide-react"
 import type { Workflow } from "@/lib/workflow-types"
-import { EMPRESA } from "@/lib/workflow-types"
 import {
   Dialog,
   DialogContent,
@@ -12,12 +11,20 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog"
 
+export interface EmpresaFullData {
+  nombre: string
+  departamentos: { name: string; usersCount: number }[]
+  agentes: { firstName: string; lastName: string; email: string }[]
+  tickets: { subject: string; status: string; count: number }[]
+}
+
 interface WorkflowTopbarProps {
   workflowName: string
   onNameChange: (name: string) => void
   isDraft: boolean
   onPublish: () => void
   workflow: Workflow | null
+  empresaData?: EmpresaFullData
 }
 
 export function WorkflowTopbar({
@@ -25,7 +32,8 @@ export function WorkflowTopbar({
   onNameChange,
   isDraft,
   onPublish,
-  workflow
+  workflow,
+  empresaData
 }: WorkflowTopbarProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(workflowName)
@@ -117,41 +125,67 @@ export function WorkflowTopbar({
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                {"🏢"} {EMPRESA.nombre}
+                {"🏢"} {empresaData?.nombre || "Sin comunidad cargada"}
               </DialogTitle>
             </DialogHeader>
-            <div className="grid grid-cols-3 gap-4 mt-4">
-              <div>
-                <h3 className="text-[12px] font-bold text-foreground mb-2">Servicios</h3>
-                <div className="space-y-1 max-h-60 overflow-auto">
-                  {EMPRESA.servicios.map((s) => (
-                    <p key={s} className="text-[11px] text-muted-foreground">{s}</p>
-                  ))}
+            {empresaData ? (
+              <div className="grid grid-cols-3 gap-4 mt-4">
+                <div>
+                  <h3 className="text-[12px] font-bold text-foreground mb-2">
+                    Departamentos ({empresaData.departamentos.length})
+                  </h3>
+                  <div className="space-y-1 max-h-60 overflow-auto">
+                    {empresaData.departamentos.map((d) => (
+                      <div key={d.name} className="flex justify-between text-[11px]">
+                        <span className="text-muted-foreground">{d.name}</span>
+                        <span className="text-foreground font-medium">{d.usersCount}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-[12px] font-bold text-foreground mb-2">
+                    Agentes ({empresaData.agentes.length})
+                  </h3>
+                  <div className="space-y-1 max-h-60 overflow-auto">
+                    {empresaData.agentes.map((a) => (
+                      <p key={a.email} className="text-[11px] text-muted-foreground">
+                        {a.firstName} {a.lastName}
+                      </p>
+                    ))}
+                    {empresaData.agentes.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground italic">Sin agentes</p>
+                    )}
+                  </div>
+                  <h4 className="text-[11px] font-medium text-foreground mt-4 mb-1">Roles disponibles:</h4>
+                  <div className="space-y-1">
+                    <p className="text-[11px] text-muted-foreground">Jefe directo</p>
+                    <p className="text-[11px] text-muted-foreground">Jefe de segundo nivel</p>
+                    <p className="text-[11px] text-muted-foreground">Aprobador designado</p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-[12px] font-bold text-foreground mb-2">
+                    Tickets frecuentes
+                  </h3>
+                  <div className="space-y-1 max-h-60 overflow-auto">
+                    {empresaData.tickets.map((t, i) => (
+                      <div key={i} className="flex justify-between text-[11px] gap-2">
+                        <span className="text-muted-foreground truncate">{t.subject}</span>
+                        <span className="text-foreground font-medium shrink-0">{t.count}</span>
+                      </div>
+                    ))}
+                    {empresaData.tickets.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground italic">Sin tickets</p>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div>
-                <h3 className="text-[12px] font-bold text-foreground mb-2">Departamentos</h3>
-                <div className="space-y-1">
-                  {EMPRESA.departamentos.map((d) => (
-                    <p key={d} className="text-[11px] text-muted-foreground">{d}</p>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <h3 className="text-[12px] font-bold text-foreground mb-2">Aprobadores + Roles</h3>
-                <div className="space-y-1 mb-4">
-                  {EMPRESA.usuarios.map((u) => (
-                    <p key={u} className="text-[11px] text-muted-foreground">{u}</p>
-                  ))}
-                </div>
-                <h4 className="text-[11px] font-medium text-foreground mb-1">Roles:</h4>
-                <div className="space-y-1">
-                  {EMPRESA.roles.map((r) => (
-                    <p key={r} className="text-[11px] text-muted-foreground">{r}</p>
-                  ))}
-                </div>
-              </div>
-            </div>
+            ) : (
+              <p className="text-[13px] text-muted-foreground mt-4 text-center py-8">
+                Ingresá un instanceId en el panel izquierdo y hacé click en &quot;Cargar&quot; para ver los datos de la comunidad.
+              </p>
+            )}
           </DialogContent>
         </Dialog>
 
