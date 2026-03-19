@@ -152,25 +152,9 @@ export function WorkflowSidebar({
           </button>
         </div>
         {empresa && (
-          <div className="bg-gradient-to-br from-[#F7F7F7] to-[#EEF2FF] rounded-xl p-3.5 border border-[#DDD] mt-2.5">
-            <p className="text-[13px] font-semibold text-[#000]">
-              {empresa.nombre}
-            </p>
-            <div className="mt-2 space-y-1">
-              <div className="flex items-center gap-2 text-[11px] text-[#606060]">
-                <span className="w-4 text-center text-[#496BE3]">S</span>
-                <span>{empresa.servicios} servicios</span>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-[#606060]">
-                <span className="w-4 text-center text-[#496BE3]">D</span>
-                <span>{empresa.departamentos.length} departamentos</span>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] text-[#606060]">
-                <span className="w-4 text-center text-[#496BE3]">U</span>
-                <span>{empresa.usuarios} usuarios ({empresa.agentes} agentes)</span>
-              </div>
-            </div>
-          </div>
+          <p className="text-[11px] text-[#606060] mt-2">
+            ✓ <span className="font-medium text-[#000]">{empresa.nombre}</span>
+          </p>
         )}
       </div>
 
