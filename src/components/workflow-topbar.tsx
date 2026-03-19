@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeft, ChevronDown, FileJson, X } from "lucide-react"
+import { ArrowLeft, ChevronDown, X } from "lucide-react"
 import type { Workflow } from "@/lib/workflow-types"
 import {
   Dialog,
@@ -54,19 +54,6 @@ export function WorkflowTopbar({
     }
   }
 
-  const handleExport = () => {
-    if (!workflow) return
-    const dataStr = JSON.stringify(workflow, null, 2)
-    const blob = new Blob([dataStr], { type: "application/json" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "workflow.hwl.json"
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
 
   return (
     <header className="h-14 bg-white border-b border-[#DDD] flex items-center px-5 gap-4 shadow-sm">
@@ -216,18 +203,6 @@ export function WorkflowTopbar({
             )}
           </DialogContent>
         </Dialog>
-
-        {/* Export JSON */}
-        <button
-          onClick={handleExport}
-          disabled={!workflow}
-          className="flex items-center gap-1.5 px-3 py-2 text-[12px] text-[#606060] hover:bg-[#F3F3F5] hover:text-[#000] rounded-lg transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <FileJson size={14} />
-          JSON
-        </button>
-
-        <div className="w-px h-5 bg-[#DDD]" />
 
         {/* Publicar */}
         <button

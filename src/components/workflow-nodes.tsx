@@ -5,6 +5,8 @@ import type { Step } from "@/lib/workflow-types"
 interface NodeProps {
   step?: Step
   trigger?: string
+  onClick?: () => void
+  isSelected?: boolean
 }
 
 // SVG Icons matching Humand's design
@@ -48,42 +50,34 @@ function BranchIcon() {
   )
 }
 
-interface TriggerNodeProps {
-  trigger: string
-  onClick?: () => void
-  isDropdownOpen?: boolean
+function nodeClass(isSelected?: boolean, hasClick?: boolean) {
+  return `flex items-center gap-3 bg-white rounded-2xl border shadow-sm w-[240px] px-4 py-3 transition-all ${
+    hasClick ? "cursor-pointer hover:border-[#496BE3]/40 hover:shadow-md" : ""
+  } ${isSelected ? "border-[#496BE3] ring-2 ring-[#496BE3]/20" : "border-[#E8E8E8]"}`
 }
 
-export function TriggerNode({ trigger, onClick, isDropdownOpen }: TriggerNodeProps) {
+function handleNodeClick(e: React.MouseEvent, onClick?: () => void) {
+  if (onClick) {
+    e.stopPropagation()
+    onClick()
+  }
+}
+
+export function TriggerNode({ trigger, onClick, isSelected }: { trigger: string; onClick?: () => void; isSelected?: boolean }) {
   return (
-    <div
-      className={`flex items-center gap-3 bg-white rounded-2xl border shadow-sm w-[240px] px-4 py-3 transition-all ${
-        onClick ? "cursor-pointer hover:border-[#496BE3]/40 hover:shadow-md" : ""
-      } ${isDropdownOpen ? "border-[#496BE3] ring-2 ring-[#496BE3]/20" : "border-[#E8E8E8]"}`}
-      onClick={(e) => {
-        if (onClick) {
-          e.stopPropagation()
-          onClick()
-        }
-      }}
-    >
+    <div className={nodeClass(isSelected, !!onClick)} onClick={(e) => handleNodeClick(e, onClick)}>
       <div className="w-[36px] h-[36px] rounded-xl bg-[#E8F5E9] flex items-center justify-center shrink-0">
         <LightningIcon />
       </div>
       <span className="text-[14px] font-semibold text-[#000] leading-tight flex-1">{trigger}</span>
-      {onClick && (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#606060" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}>
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
-      )}
     </div>
   )
 }
 
-export function ApprovalNode({ step }: NodeProps) {
+export function ApprovalNode({ step, onClick, isSelected }: NodeProps) {
   if (!step) return null
   return (
-    <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E8E8E8] shadow-sm w-[240px] px-4 py-3">
+    <div className={nodeClass(isSelected, !!onClick)} onClick={(e) => handleNodeClick(e, onClick)}>
       <div className="w-[36px] h-[36px] rounded-xl bg-[#EEF2FF] flex items-center justify-center shrink-0">
         <ApprovalIcon />
       </div>
@@ -92,10 +86,10 @@ export function ApprovalNode({ step }: NodeProps) {
   )
 }
 
-export function UpdateNode({ step }: NodeProps) {
+export function UpdateNode({ step, onClick, isSelected }: NodeProps) {
   if (!step) return null
   return (
-    <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E8E8E8] shadow-sm w-[240px] px-4 py-3">
+    <div className={nodeClass(isSelected, !!onClick)} onClick={(e) => handleNodeClick(e, onClick)}>
       <div className="w-[36px] h-[36px] rounded-xl bg-[#E0F2F1] flex items-center justify-center shrink-0">
         <UpdateIcon />
       </div>
@@ -104,10 +98,10 @@ export function UpdateNode({ step }: NodeProps) {
   )
 }
 
-export function BranchNode({ step }: NodeProps) {
+export function BranchNode({ step, onClick, isSelected }: NodeProps) {
   if (!step) return null
   return (
-    <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E8E8E8] shadow-sm w-[240px] px-4 py-3">
+    <div className={nodeClass(isSelected, !!onClick)} onClick={(e) => handleNodeClick(e, onClick)}>
       <div className="w-[36px] h-[36px] rounded-xl bg-[#EEF2FF] flex items-center justify-center shrink-0">
         <BranchIcon />
       </div>

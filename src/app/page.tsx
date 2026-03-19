@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { WorkflowTopbar, type EmpresaFullData } from "@/components/workflow-topbar"
 import { WorkflowSidebar } from "@/components/workflow-sidebar"
 import { WorkflowCanvas } from "@/components/workflow-canvas"
-import { DEFAULT_WORKFLOW, TEMPLATES, type Workflow, type ChatMessage } from "@/lib/workflow-types"
+import { NodeEditPanel } from "@/components/node-edit-panel"
+import { DEFAULT_WORKFLOW, TEMPLATES, type Workflow, type ChatMessage, type Step } from "@/lib/workflow-types"
 import { matchService } from "@/lib/service-matcher"
 import { Toaster, toast } from "sonner"
 
@@ -30,7 +31,42 @@ export default function WorkflowComposer() {
   const [empresaFull, setEmpresaFull] = useState<EmpresaFullData | undefined>()
   const [isLoadingInstance, setIsLoadingInstance] = useState(false)
 
-  // --- Feature 3: Errors as chat bubbles ---
+  // Node selection for edit panel
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null) // step id or "__trigger__"
+  const selectedStep = selectedStepId === "__trigger__"
+    ? null
+    : workflow?.steps.find(s => s.id === selectedStepId) || null
+  const isPanelOpen = selectedStepId !== null
+
+  // Close panel on Escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedStepId(null)
+    }
+    document.addEventListener("keydown", handleEscape)
+    return () => document.removeEventListener("keydown", handleEscape)
+  }, [])
+
+  const handleNodeClick = useCallback((step: Step | null) => {
+    if (step === null) {
+      // Trigger node clicked
+      setSelectedStepId("__trigger__")
+    } else {
+      setSelectedStepId(step.id)
+    }
+  }, [])
+
+  const handleUpdateStep = useCallback((stepId: string, updates: Partial<Step>) => {
+    setWorkflow(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        steps: prev.steps.map(s => s.id === stepId ? { ...s, ...updates } : s)
+      }
+    })
+    setIsDraft(true)
+  }, [])
+
   const handleLoadInstance = useCallback(async () => {
     if (!instanceId) return
     setIsLoadingInstance(true)
@@ -88,12 +124,12 @@ export default function WorkflowComposer() {
     setWorkflow(templateWorkflow)
     setWorkflowName(templateWorkflow.trigger)
     setIsDraft(true)
+    setSelectedStepId(null)
     const template = TEMPLATES.find(t => t.workflow.trigger === templateWorkflow.trigger)
     setSelectedTemplateId(template?.id || null)
     setMessages([])
   }, [])
 
-  // --- Feature 1: Service validation before generating ---
   const handleGenerate = useCallback(async (text: string) => {
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -102,7 +138,6 @@ export default function WorkflowComposer() {
     }
     setMessages(prev => [...prev, userMsg])
 
-    // Validation: instanceId loaded?
     if (!instanceId || !empresaFull) {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -114,7 +149,6 @@ export default function WorkflowComposer() {
       return
     }
 
-    // Validation: loading in progress?
     if (isLoadingInstance) {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -126,7 +160,6 @@ export default function WorkflowComposer() {
       return
     }
 
-    // Validation: match service
     const match = matchService(text, empresaFull.servicios)
 
     if (!match) {
@@ -141,8 +174,8 @@ export default function WorkflowComposer() {
       return
     }
 
-    // Matched → proceed with generation
     setIsGenerating(true)
+    setSelectedStepId(null)
 
     try {
       const response = await fetch("/api/generate", {
@@ -192,7 +225,6 @@ export default function WorkflowComposer() {
     }
   }, [workflow, instanceId, empresaFull, isLoadingInstance])
 
-  // --- Feature 2: Trigger change from dropdown ---
   const handleTriggerChange = useCallback((newTrigger: string) => {
     setWorkflow(prev => prev ? { ...prev, trigger: newTrigger } : prev)
     setWorkflowName(newTrigger)
@@ -235,6 +267,19 @@ export default function WorkflowComposer() {
           workflow={workflow}
           services={empresaFull?.servicios}
           onTriggerChange={handleTriggerChange}
+          onNodeClick={handleNodeClick}
+          selectedStepId={selectedStepId}
+        />
+        <NodeEditPanel
+          isOpen={isPanelOpen}
+          step={selectedStep}
+          isTrigger={selectedStepId === "__trigger__"}
+          trigger={workflow?.trigger}
+          services={empresaFull?.servicios}
+          agents={empresaFull?.agentes}
+          onClose={() => setSelectedStepId(null)}
+          onUpdateStep={handleUpdateStep}
+          onUpdateTrigger={handleTriggerChange}
         />
       </div>
     </div>

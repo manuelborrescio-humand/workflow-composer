@@ -72,6 +72,44 @@ export function WorkflowSidebar({
 
   return (
     <div className="w-[320px] bg-white border-r border-[#DDD] flex flex-col h-full shadow-sm">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-[#DDD]">
+        <p className="text-[15px] font-bold text-[#000]">Workflow Composer</p>
+        <p className="text-[11px] text-[#606060] mt-0.5">Diseñá flujos con IA</p>
+      </div>
+
+      {/* Instance selector */}
+      <div className="px-5 py-3 border-b border-[#DDD]">
+        <p className="text-[11px] uppercase text-[#606060] font-semibold mb-2 tracking-wider">
+          Comunidad
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={instanceId || ""}
+            onChange={(e) => onInstanceIdChange?.(e.target.value)}
+            placeholder="instanceId"
+            className="flex-1 px-3 py-2 bg-[#F7F7F7] border border-[#DDD] rounded-lg text-[12px] text-[#000] placeholder:text-[#606060] focus:outline-none focus:ring-2 focus:ring-[#496BE3]/20 focus:border-[#496BE3] transition-all"
+          />
+          <button
+            onClick={onLoadInstance}
+            disabled={!instanceId || isLoadingInstance}
+            className={`px-4 py-2 rounded-lg text-[12px] font-semibold transition-all duration-150 ${
+              instanceId && !isLoadingInstance
+                ? "bg-[#496BE3] text-white hover:bg-[#3D5CC7] shadow-sm"
+                : "bg-[#F3F3F5] text-[#606060] cursor-not-allowed"
+            }`}
+          >
+            {isLoadingInstance ? "..." : "Cargar"}
+          </button>
+        </div>
+        {empresa && (
+          <p className="text-[11px] text-[#606060] mt-2">
+            ✓ <span className="font-medium text-[#000]">{empresa.nombre}</span>
+          </p>
+        )}
+      </div>
+
       {/* Templates (collapsible) */}
       <div className="border-b border-[#DDD]">
         <button
@@ -123,38 +161,6 @@ export function WorkflowSidebar({
               </button>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* Instance selector + Company snapshot */}
-      <div className="px-5 py-3 border-b border-[#DDD]">
-        <p className="text-[11px] uppercase text-[#606060] font-semibold mb-2 tracking-wider">
-          Comunidad
-        </p>
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={instanceId || ""}
-            onChange={(e) => onInstanceIdChange?.(e.target.value)}
-            placeholder="instanceId"
-            className="flex-1 px-3 py-2 bg-[#F7F7F7] border border-[#DDD] rounded-lg text-[12px] text-[#000] placeholder:text-[#606060] focus:outline-none focus:ring-2 focus:ring-[#496BE3]/20 focus:border-[#496BE3] transition-all"
-          />
-          <button
-            onClick={onLoadInstance}
-            disabled={!instanceId || isLoadingInstance}
-            className={`px-4 py-2 rounded-lg text-[12px] font-semibold transition-all duration-150 ${
-              instanceId && !isLoadingInstance
-                ? "bg-[#496BE3] text-white hover:bg-[#3D5CC7] shadow-sm"
-                : "bg-[#F3F3F5] text-[#606060] cursor-not-allowed"
-            }`}
-          >
-            {isLoadingInstance ? "..." : "Cargar"}
-          </button>
-        </div>
-        {empresa && (
-          <p className="text-[11px] text-[#606060] mt-2">
-            ✓ <span className="font-medium text-[#000]">{empresa.nombre}</span>
-          </p>
         )}
       </div>
 
