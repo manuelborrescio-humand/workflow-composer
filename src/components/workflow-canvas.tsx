@@ -9,6 +9,7 @@ import {
   BranchNode,
   EndNode,
   Connector,
+  BranchConnectorTop,
   ApprovedPill,
   RejectedPill,
   BranchPill
@@ -80,10 +81,11 @@ function RenderStep({ step, tree, isLast, onNodeClick, selectedStepId }: RenderS
           <ApprovedPill />
           <RejectedPill />
         </div>
-        <div className="flex gap-8 mt-0">
+        <Connector />
+        <div className="flex gap-8 mt-0 overflow-visible">
           {/* Approved branch */}
           <div className="flex flex-col items-center">
-            <Connector />
+            <BranchConnectorTop position="first" gap={32} />
             {approvedChildren.map((child, i) => (
               <RenderStep
                 key={child.id}
@@ -98,7 +100,7 @@ function RenderStep({ step, tree, isLast, onNodeClick, selectedStepId }: RenderS
           </div>
           {/* Rejected branch */}
           <div className="flex flex-col items-center">
-            <Connector />
+            <BranchConnectorTop position="last" gap={32} />
             {rejectedChildren.map((child, i) => (
               <RenderStep
                 key={child.id}
@@ -127,12 +129,20 @@ function RenderStep({ step, tree, isLast, onNodeClick, selectedStepId }: RenderS
             <BranchPill key={cond} label={cond} />
           ))}
         </div>
-        <div className="flex gap-6 mt-0">
-          {branchConditions.map((cond) => {
+        <Connector />
+        <div className="flex gap-6 mt-0 overflow-visible">
+          {branchConditions.map((cond, index) => {
             const branchChildren = children.filter(c => c.branch === cond)
+            const position = branchConditions.length === 1
+              ? 'only' as const
+              : index === 0
+                ? 'first' as const
+                : index === branchConditions.length - 1
+                  ? 'last' as const
+                  : 'middle' as const
             return (
               <div key={cond} className="flex flex-col items-center">
-                <Connector />
+                <BranchConnectorTop position={position} gap={24} />
                 {branchChildren.map((child, i) => (
                   <RenderStep
                     key={child.id}

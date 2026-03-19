@@ -127,6 +127,45 @@ export function Connector({ height = 24 }: { height?: number }) {
   )
 }
 
+export function BranchConnectorTop({ position, gap }: { position: 'first' | 'middle' | 'last' | 'only'; gap: number }) {
+  if (position === 'only') return <Connector />
+  const halfGap = gap / 2
+
+  return (
+    <div className="relative flex justify-center w-full" style={{ height: '24px' }}>
+      {position !== 'first' && (
+        <div
+          className="absolute top-0"
+          style={{
+            right: '50%',
+            width: `calc(50% + ${halfGap}px)`,
+            height: '1.5px',
+            backgroundColor: '#C8C8D0',
+          }}
+        />
+      )}
+      {position !== 'last' && (
+        <div
+          className="absolute top-0"
+          style={{
+            left: '50%',
+            width: `calc(50% + ${halfGap}px)`,
+            height: '1.5px',
+            backgroundColor: '#C8C8D0',
+          }}
+        />
+      )}
+      <div
+        style={{
+          width: '1.5px',
+          height: '24px',
+          backgroundColor: '#C8C8D0',
+        }}
+      />
+    </div>
+  )
+}
+
 export function ApprovedPill() {
   return (
     <span className="inline-flex items-center gap-1 rounded-full px-4 py-1 text-[12px] font-bold text-[#16A34A] bg-[#E8F5E9] border border-[#A5D6A7]">
