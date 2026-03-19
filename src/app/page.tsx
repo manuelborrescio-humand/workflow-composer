@@ -130,25 +130,39 @@ export default function WorkflowComposer() {
     const template = TEMPLATES.find(t => t.workflow.trigger === templateWorkflow.trigger)
     setSelectedTemplateId(template?.id || null)
     setMessages([])
+    // Reset clarifying Q&A conversation
+    generateConversationRef.current = []
+    activeMatchedServiceRef.current = null
   }, [])
 
   // Ref for messages to avoid stale closures in handlers
   const messagesRef = useRef(messages)
   messagesRef.current = messages
 
+  // Conversation history for the /api/generate clarifying Q&A flow
+  const generateConversationRef = useRef<Array<{ role: "user" | "assistant"; content: string }>>([])
+  const activeMatchedServiceRef = useRef<string | null>(null)
+
   // Generate workflow with a specific service (reusable for all 3 levels)
   const generateWorkflow = useCallback(async (userText: string, serviceName: string) => {
     setIsGenerating(true)
     setSelectedStepId(null)
+    activeMatchedServiceRef.current = serviceName
+
+    // Add user message to conversation history for the generate API
+    generateConversationRef.current.push({ role: "user", content: userText })
 
     const thinkingMsg: ChatMessage = {
       id: Date.now().toString(),
       role: "assistant",
-      content: `Generando workflow para "${serviceName}"...`
+      content: `Analizando tu solicitud para "${serviceName}"...`
     }
     setMessages(prev => [...prev, thinkingMsg])
 
     try {
+      // Send conversation history (excluding current message which goes as userText)
+      const history = generateConversationRef.current.slice(0, -1)
+
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -156,7 +170,8 @@ export default function WorkflowComposer() {
           userText,
           currentWorkflow: workflow,
           instanceId: instanceId || undefined,
-          matchedService: serviceName
+          matchedService: serviceName,
+          conversationHistory: history.length > 0 ? history : undefined
         })
       })
 
@@ -169,11 +184,25 @@ export default function WorkflowComposer() {
           content: `Error: ${data.error}`,
           isError: true
         }])
+      } else if (data.questions) {
+        // Claude needs more context - show clarifying questions
+        generateConversationRef.current.push({ role: "assistant", content: data.questions })
+
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: "assistant" as const,
+          content: data.questions,
+          type: "clarifying-questions" as const
+        }])
       } else if (data.workflow) {
         setWorkflow(data.workflow)
         setWorkflowName(data.workflow.trigger)
         setSelectedTemplateId(null)
         setIsDraft(true)
+
+        // Reset conversation since generation is complete
+        generateConversationRef.current = []
+        activeMatchedServiceRef.current = null
 
         setMessages(prev => [...prev, {
           id: (Date.now() + 1).toString(),
@@ -230,6 +259,16 @@ export default function WorkflowComposer() {
       }])
       return
     }
+
+    // Check if this is a follow-up answer to clarifying questions
+    if (generateConversationRef.current.length > 0 && activeMatchedServiceRef.current) {
+      await generateWorkflow(text, activeMatchedServiceRef.current)
+      return
+    }
+
+    // Reset conversation for a new generation session
+    generateConversationRef.current = []
+    activeMatchedServiceRef.current = null
 
     // LLM-based service matching
     setIsGenerating(true)

@@ -25,7 +25,13 @@ Roles de aprobación: Jefe directo, Jefe de segundo nivel, Aprobador designado`
 
 export async function POST(request: Request) {
   try {
-    const { userText, currentWorkflow, instanceId, matchedService } = await request.json()
+    const { userText, currentWorkflow, instanceId, matchedService, conversationHistory } = await request.json() as {
+      userText: string
+      currentWorkflow?: Workflow
+      instanceId?: string
+      matchedService?: string
+      conversationHistory?: Array<{ role: "user" | "assistant"; content: string }>
+    }
 
     if (!ANTHROPIC_API_KEY) {
       return NextResponse.json(
@@ -47,6 +53,19 @@ export async function POST(request: Request) {
     const empresaContext = buildEmpresaContext(instanceContext)
 
     const systemPrompt = `Sos un asistente que genera workflows de automatización para una plataforma de RRHH llamada Humand.
+
+MODO DE RESPUESTA:
+Antes de generar un workflow, evaluá si tenés suficiente información del usuario. Si el prompt es vago o le faltan detalles clave para armar un buen workflow, hacé 2-4 preguntas clarificadoras. Si ya tenés suficiente contexto (el usuario describió quién aprueba, qué pasa en cada caso, etc.), generá el workflow directamente.
+
+- Si necesitás más información: Respondé con texto plano en español. Hacé preguntas específicas y concisas sobre lo que falta, por ejemplo:
+  * Quién debe aprobar (qué rol o nivel jerárquico)
+  * Cuántos niveles de aprobación se necesitan
+  * Qué sucede cuando se rechaza la solicitud
+  * Si se necesitan ramas condicionales (por departamento, monto, etc.)
+  * Qué departamentos están involucrados
+  Empezá tu respuesta EXACTAMENTE con "PREGUNTAS:" seguido de tus preguntas numeradas.
+
+- Si tenés suficiente información: Respondé SOLO con JSON puro que coincida exactamente con el tipo Workflow. Empezá tu respuesta directamente con "{".
 
 DATOS DE LA EMPRESA:
 ${empresaContext}
@@ -76,21 +95,28 @@ interface Workflow {
 }
 \`\`\`
 
-REGLAS:
-1. Solo devolvé JSON puro que coincida exactamente con el tipo Workflow
-2. NO incluyas markdown, explicaciones ni texto adicional
+REGLAS PARA GENERAR WORKFLOWS:
+1. Solo devolvé JSON puro que coincida exactamente con el tipo Workflow (cuando generás, NO cuando preguntás)
+2. NO incluyas markdown, explicaciones ni texto adicional en el JSON
 3. Los IDs de steps deben ser únicos (s1, s2, s3, etc.)
 4. Los approvers deben ser roles válidos (Jefe directo, Jefe de segundo nivel, Aprobador designado) o nombres de usuarios reales de la empresa
 5. Los status válidos son: "En proceso", "En espera", "Cerrada", "Cancelada"
 6. branch puede ser "approved", "rejected" o una condición del branch node
 7. Para approval nodes, siempre incluí los dos outcomes: approved (Cerrada) y rejected (Cancelada)
 8. Usá departamentos y datos reales de la empresa cuando sea relevante
-${matchedService ? `\n9. El servicio trigger DEBE ser exactamente: "${matchedService}". Usá este nombre como el campo "trigger" del workflow.` : ""}
-${currentWorkflow ? `\n${matchedService ? "10" : "9"}. IMPORTANTE: Modificá el workflow existente sin eliminar pasos existentes, solo agregá o modificá según lo pedido.` : ""}
+${matchedService ? `9. El servicio trigger DEBE ser exactamente: "${matchedService}". Usá este nombre como el campo "trigger" del workflow.` : ""}
+${currentWorkflow ? `${matchedService ? "10" : "9"}. IMPORTANTE: Modificá el workflow existente sin eliminar pasos existentes, solo agregá o modificá según lo pedido.` : ""}
 
-${currentWorkflow ? `WORKFLOW ACTUAL:\n${JSON.stringify(currentWorkflow, null, 2)}` : ""}
+${currentWorkflow ? `WORKFLOW ACTUAL:\n${JSON.stringify(currentWorkflow, null, 2)}` : ""}`
 
-Respondé SOLO con el JSON del Workflow.`
+    // Build messages array from conversation history + current user text
+    const apiMessages: Array<{ role: "user" | "assistant"; content: string }> = []
+    if (conversationHistory && conversationHistory.length > 0) {
+      for (const msg of conversationHistory) {
+        apiMessages.push({ role: msg.role, content: msg.content })
+      }
+    }
+    apiMessages.push({ role: "user", content: userText })
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -101,8 +127,8 @@ Respondé SOLO con el JSON del Workflow.`
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 2048,
-        messages: [{ role: "user", content: userText }],
+        max_tokens: 4096,
+        messages: apiMessages,
         system: systemPrompt
       })
     })
@@ -126,8 +152,19 @@ Respondé SOLO con el JSON del Workflow.`
       )
     }
 
+    const trimmed = content.trim()
+
+    // Check if Claude responded with clarifying questions instead of a workflow
+    if (trimmed.startsWith("PREGUNTAS:") || (!trimmed.startsWith("{") && !trimmed.startsWith("[") && !trimmed.startsWith("```"))) {
+      const questionsText = trimmed.startsWith("PREGUNTAS:")
+        ? trimmed.slice("PREGUNTAS:".length).trim()
+        : trimmed
+      return NextResponse.json({ questions: questionsText })
+    }
+
+    // Otherwise, try to parse as workflow JSON
     try {
-      let cleanContent = content.trim()
+      let cleanContent = trimmed
       if (cleanContent.startsWith("```json")) {
         cleanContent = cleanContent.slice(7)
       } else if (cleanContent.startsWith("```")) {

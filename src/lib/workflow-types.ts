@@ -275,7 +275,7 @@ export interface ChatMessage {
   content: string
   isError?: boolean
   // Interactive matching fields
-  type?: "text" | "confirmation" | "service-list"
+  type?: "text" | "confirmation" | "service-list" | "clarifying-questions"
   matchedService?: string
   services?: { name: string; status: string }[]
   originalUserText?: string
