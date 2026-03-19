@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import type { Workflow, Template, ChatMessage } from "@/lib/workflow-types"
+import type { Workflow, ChatMessage } from "@/lib/workflow-types"
 import { TEMPLATES } from "@/lib/workflow-types"
 
 interface EmpresaData {
@@ -24,6 +24,25 @@ interface WorkflowSidebarProps {
   onInstanceIdChange?: (id: string) => void
   onLoadInstance?: () => void
   isLoadingInstance?: boolean
+  onConfirmService?: (messageId: string) => void
+  onRejectMatch?: (messageId: string) => void
+  onSelectService?: (serviceName: string, messageId: string) => void
+}
+
+function SmallSpinner() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>
+  )
+}
+
+function LightningIconSmall() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  )
 }
 
 export function WorkflowSidebar({
@@ -37,12 +56,25 @@ export function WorkflowSidebar({
   instanceId,
   onInstanceIdChange,
   onLoadInstance,
-  isLoadingInstance
+  isLoadingInstance,
+  onConfirmService,
+  onRejectMatch,
+  onSelectService
 }: WorkflowSidebarProps) {
   const [inputText, setInputText] = useState("")
   const [templatesOpen, setTemplatesOpen] = useState(false)
+  const [activeActionMessageId, setActiveActionMessageId] = useState<string | null>(null)
+  const [activeAction, setActiveAction] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Reset active action when generation finishes
+  useEffect(() => {
+    if (!isGenerating) {
+      setActiveActionMessageId(null)
+      setActiveAction(null)
+    }
+  }, [isGenerating])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputText(e.target.value)
@@ -68,6 +100,122 @@ export function WorkflowSidebar({
       e.preventDefault()
       handleSubmit()
     }
+  }
+
+  const renderMessage = (msg: ChatMessage) => {
+    // Confirmation message (Level 2)
+    if (msg.type === "confirmation" && msg.role === "assistant") {
+      const isActive = activeActionMessageId === msg.id
+      const buttonsDisabled = msg.resolved || isGenerating
+
+      return (
+        <div key={msg.id}>
+          <p className="text-[10px] font-medium mb-1 text-[#496BE3]">Asistente</p>
+          <div className="px-3 py-2.5 rounded-xl text-[12px] leading-relaxed bg-white border border-[#E8E8E8] shadow-sm">
+            <p className="text-[#000] whitespace-pre-wrap">{msg.content}</p>
+            <div className="flex gap-2 mt-3">
+              <button
+                disabled={buttonsDisabled}
+                onClick={() => {
+                  setActiveActionMessageId(msg.id)
+                  setActiveAction("confirm")
+                  onConfirmService?.(msg.id)
+                }}
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[12px] font-medium transition-all duration-150 ${
+                  buttonsDisabled
+                    ? "bg-[#7C3AED]/40 text-white cursor-not-allowed"
+                    : "bg-[#7C3AED] text-white hover:bg-[#6D28D9]"
+                }`}
+              >
+                {isActive && activeAction === "confirm" && isGenerating ? <SmallSpinner /> : null}
+                Sí, crear flujo
+              </button>
+              <button
+                disabled={buttonsDisabled}
+                onClick={() => {
+                  setActiveActionMessageId(msg.id)
+                  setActiveAction("reject")
+                  onRejectMatch?.(msg.id)
+                }}
+                className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[12px] font-medium transition-all duration-150 ${
+                  buttonsDisabled
+                    ? "border border-[#E8E8E8] bg-[#F7F7F7] text-[#B0B0C0] cursor-not-allowed"
+                    : "border border-[#E8E8E8] bg-white text-[#606060] hover:bg-[#F7F7F7]"
+                }`}
+              >
+                No, elegir otro
+              </button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Service list message (Level 3)
+    if (msg.type === "service-list" && msg.role === "assistant") {
+      const isActive = activeActionMessageId === msg.id
+      const cardsDisabled = msg.resolved || isGenerating
+
+      return (
+        <div key={msg.id}>
+          <p className="text-[10px] font-medium mb-1 text-[#496BE3]">Asistente</p>
+          <div className="px-3 py-2.5 rounded-xl text-[12px] leading-relaxed bg-white border border-[#E8E8E8] shadow-sm">
+            <p className="text-[#000] whitespace-pre-wrap">{msg.content}</p>
+            <div className="flex flex-col gap-1.5 mt-3 max-h-[200px] overflow-auto">
+              {msg.services?.map(service => (
+                <button
+                  key={service.name}
+                  disabled={cardsDisabled}
+                  onClick={() => {
+                    setActiveActionMessageId(msg.id)
+                    setActiveAction(service.name)
+                    onSelectService?.(service.name, msg.id)
+                  }}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-3 transition-all duration-150 ${
+                    cardsDisabled
+                      ? "bg-[#F7F7F7] border border-[#E8E8E8] cursor-not-allowed opacity-60"
+                      : "bg-white border border-[#E8E8E8] hover:bg-[#F7F7F7] hover:border-[#C8C8D0] cursor-pointer"
+                  }`}
+                >
+                  <div className="w-[28px] h-[28px] rounded-lg bg-[#E8F5E9] flex items-center justify-center shrink-0">
+                    {isActive && activeAction === service.name && isGenerating
+                      ? <SmallSpinner />
+                      : <LightningIconSmall />
+                    }
+                  </div>
+                  <span className="text-[12px] font-medium text-[#000] flex-1">{service.name}</span>
+                  <span className="text-[10px] rounded-full px-2 py-0.5 bg-[#E8F5E9] text-[#16A34A] shrink-0">
+                    Activo
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    // Default text message (same as before)
+    return (
+      <div key={msg.id}>
+        <p className={`text-[10px] font-medium mb-1 ${
+          msg.role === "user" ? "text-[#606060]" : msg.isError ? "text-[#B91C1C]" : "text-[#496BE3]"
+        }`}>
+          {msg.role === "user" ? "Tú" : "Asistente"}
+        </p>
+        <div
+          className={`px-3 py-2.5 rounded-xl text-[12px] leading-relaxed whitespace-pre-wrap ${
+            msg.role === "user"
+              ? "bg-[#F3F3F5] text-[#000]"
+              : msg.isError
+                ? "bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]"
+                : "bg-[#EEF2FF] text-[#496BE3] border border-[#496BE3]/10"
+          }`}
+        >
+          {msg.content}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -186,26 +334,7 @@ export function WorkflowSidebar({
           </button>
         )}
         <div className="space-y-3 mt-auto">
-          {messages.map((msg) => (
-            <div key={msg.id}>
-              <p className={`text-[10px] font-medium mb-1 ${
-                msg.role === "user" ? "text-[#606060]" : msg.isError ? "text-[#B91C1C]" : "text-[#496BE3]"
-              }`}>
-                {msg.role === "user" ? "Tú" : "Asistente"}
-              </p>
-              <div
-                className={`px-3 py-2.5 rounded-xl text-[12px] leading-relaxed whitespace-pre-wrap ${
-                  msg.role === "user"
-                    ? "bg-[#F3F3F5] text-[#000]"
-                    : msg.isError
-                      ? "bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]"
-                      : "bg-[#EEF2FF] text-[#496BE3] border border-[#496BE3]/10"
-                }`}
-              >
-                {msg.content}
-              </div>
-            </div>
-          ))}
+          {messages.map((msg) => renderMessage(msg))}
           <div ref={messagesEndRef} />
         </div>
       </div>

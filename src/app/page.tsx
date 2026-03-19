@@ -1,13 +1,15 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { WorkflowTopbar, type EmpresaFullData } from "@/components/workflow-topbar"
 import { WorkflowSidebar } from "@/components/workflow-sidebar"
 import { WorkflowCanvas } from "@/components/workflow-canvas"
 import { NodeEditPanel } from "@/components/node-edit-panel"
 import { DEFAULT_WORKFLOW, TEMPLATES, type Workflow, type ChatMessage, type Step } from "@/lib/workflow-types"
-import { matchService } from "@/lib/service-matcher"
 import { Toaster, toast } from "sonner"
+
+const CONFIDENCE_HIGH = 85
+const CONFIDENCE_LOW = 40
 
 interface EmpresaData {
   nombre: string
@@ -130,6 +132,67 @@ export default function WorkflowComposer() {
     setMessages([])
   }, [])
 
+  // Ref for messages to avoid stale closures in handlers
+  const messagesRef = useRef(messages)
+  messagesRef.current = messages
+
+  // Generate workflow with a specific service (reusable for all 3 levels)
+  const generateWorkflow = useCallback(async (userText: string, serviceName: string) => {
+    setIsGenerating(true)
+    setSelectedStepId(null)
+
+    const thinkingMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: "assistant",
+      content: `Generando workflow para "${serviceName}"...`
+    }
+    setMessages(prev => [...prev, thinkingMsg])
+
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userText,
+          currentWorkflow: workflow,
+          instanceId: instanceId || undefined,
+          matchedService: serviceName
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.error) {
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: "assistant" as const,
+          content: `Error: ${data.error}`,
+          isError: true
+        }])
+      } else if (data.workflow) {
+        setWorkflow(data.workflow)
+        setWorkflowName(data.workflow.trigger)
+        setSelectedTemplateId(null)
+        setIsDraft(true)
+
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: "assistant" as const,
+          content: `Workflow generado: "${data.workflow.trigger}" con ${data.workflow.steps.length} pasos.`
+        }])
+      }
+    } catch {
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 1).toString(),
+        role: "assistant" as const,
+        content: "Error al conectar con el servidor.",
+        isError: true
+      }])
+    } finally {
+      setIsGenerating(false)
+    }
+  }, [workflow, instanceId])
+
   const handleGenerate = useCallback(async (text: string) => {
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -139,91 +202,137 @@ export default function WorkflowComposer() {
     setMessages(prev => [...prev, userMsg])
 
     if (!instanceId || !empresaFull) {
-      const errorMsg: ChatMessage = {
+      setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
+        role: "assistant" as const,
         content: "Primero cargá una comunidad ingresando el instanceId y haciendo click en \"Cargar\".",
         isError: true
-      }
-      setMessages(prev => [...prev, errorMsg])
+      }])
       return
     }
 
     if (isLoadingInstance) {
-      const errorMsg: ChatMessage = {
+      setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
+        role: "assistant" as const,
         content: "Esperá a que terminen de cargarse los datos de la comunidad.",
         isError: true
-      }
-      setMessages(prev => [...prev, errorMsg])
+      }])
       return
     }
 
-    const match = matchService(text, empresaFull.servicios)
-
-    if (!match) {
-      const serviceList = empresaFull.servicios.map(s => `• ${s.name}`).join("\n")
-      const errorMsg: ChatMessage = {
+    if (empresaFull.servicios.length === 0) {
+      setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `No encontré un servicio que coincida con tu descripción.\n\nPara crear este flujo, primero creá el servicio desde el Catálogo de servicios en Humand.\n\nServicios disponibles en ${empresaFull.nombre}:\n${serviceList}`,
+        role: "assistant" as const,
+        content: "No hay servicios configurados en esta comunidad. Creá servicios desde el Catálogo de servicios en Humand.",
         isError: true
-      }
-      setMessages(prev => [...prev, errorMsg])
+      }])
       return
     }
 
+    // LLM-based service matching
     setIsGenerating(true)
-    setSelectedStepId(null)
-
     try {
-      const response = await fetch("/api/generate", {
+      const matchRes = await fetch("/api/match-service", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userText: text,
-          currentWorkflow: workflow,
-          instanceId: instanceId || undefined,
-          matchedService: match.serviceName
-        })
+        body: JSON.stringify({ userText: text, services: empresaFull.servicios })
       })
+      const matchData = await matchRes.json()
 
-      const data = await response.json()
+      if (matchData.error) {
+        // API error → fallback to Level 3 (never dead-end)
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 2).toString(),
+          role: "assistant" as const,
+          content: "No pude determinar el servicio automáticamente.\n¿Quizás querés crear un flujo para alguno de estos?",
+          type: "service-list" as const,
+          services: empresaFull.servicios,
+          originalUserText: text,
+          resolved: false
+        }])
+        setIsGenerating(false)
+        return
+      }
 
-      if (data.error) {
-        const errorMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `Error: ${data.error}`,
-          isError: true
-        }
-        setMessages(prev => [...prev, errorMsg])
-      } else if (data.workflow) {
-        setWorkflow(data.workflow)
-        setWorkflowName(data.workflow.trigger)
-        setSelectedTemplateId(null)
-        setIsDraft(true)
+      const { matched_service, confidence } = matchData
 
-        const successMsg: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `Workflow generado: "${data.workflow.trigger}" con ${data.workflow.steps.length} pasos.`
-        }
-        setMessages(prev => [...prev, successMsg])
+      if (matched_service && confidence > CONFIDENCE_HIGH) {
+        // LEVEL 1: High confidence → auto-generate
+        setIsGenerating(false)
+        await generateWorkflow(text, matched_service)
+      } else if (matched_service && confidence >= CONFIDENCE_LOW) {
+        // LEVEL 2: Partial match → confirm with user
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 2).toString(),
+          role: "assistant" as const,
+          content: `Entendí que querés crear un flujo para "${matched_service}".\n¿Es lo que estás buscando?`,
+          type: "confirmation" as const,
+          matchedService: matched_service,
+          originalUserText: text,
+          resolved: false
+        }])
+        setIsGenerating(false)
+      } else {
+        // LEVEL 3: No match → show service list
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 2).toString(),
+          role: "assistant" as const,
+          content: "No encontré ningún servicio que se parezca a lo que describís.\n¿Quizás querés crear un flujo para alguno de estos?",
+          type: "service-list" as const,
+          services: empresaFull.servicios,
+          originalUserText: text,
+          resolved: false
+        }])
+        setIsGenerating(false)
       }
     } catch {
-      const errorMsg: ChatMessage = {
+      setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
-        role: "assistant",
+        role: "assistant" as const,
         content: "Error al conectar con el servidor.",
         isError: true
-      }
-      setMessages(prev => [...prev, errorMsg])
-    } finally {
+      }])
       setIsGenerating(false)
     }
-  }, [workflow, instanceId, empresaFull, isLoadingInstance])
+  }, [instanceId, empresaFull, isLoadingInstance, generateWorkflow])
+
+  // Interactive message handlers
+  const markMessageResolved = useCallback((messageId: string) => {
+    setMessages(prev => prev.map(m =>
+      m.id === messageId ? { ...m, resolved: true } : m
+    ))
+  }, [])
+
+  const handleConfirmService = useCallback(async (messageId: string) => {
+    const msg = messagesRef.current.find(m => m.id === messageId)
+    if (!msg?.matchedService || !msg?.originalUserText) return
+    markMessageResolved(messageId)
+    await generateWorkflow(msg.originalUserText, msg.matchedService)
+  }, [markMessageResolved, generateWorkflow])
+
+  const handleRejectMatch = useCallback((messageId: string) => {
+    const msg = messagesRef.current.find(m => m.id === messageId)
+    if (!msg?.originalUserText || !empresaFull) return
+    markMessageResolved(messageId)
+    setMessages(prev => [...prev, {
+      id: Date.now().toString(),
+      role: "assistant" as const,
+      content: "Elegí el servicio que más se ajuste a tu solicitud:",
+      type: "service-list" as const,
+      services: empresaFull.servicios,
+      originalUserText: msg.originalUserText,
+      resolved: false
+    }])
+  }, [empresaFull, markMessageResolved])
+
+  const handleSelectService = useCallback(async (serviceName: string, messageId: string) => {
+    const msg = messagesRef.current.find(m => m.id === messageId)
+    if (!msg?.originalUserText) return
+    markMessageResolved(messageId)
+    await generateWorkflow(msg.originalUserText, serviceName)
+  }, [markMessageResolved, generateWorkflow])
 
   const handleTriggerChange = useCallback((newTrigger: string) => {
     setWorkflow(prev => prev ? { ...prev, trigger: newTrigger } : prev)
@@ -262,6 +371,9 @@ export default function WorkflowComposer() {
           onInstanceIdChange={setInstanceId}
           onLoadInstance={handleLoadInstance}
           isLoadingInstance={isLoadingInstance}
+          onConfirmService={handleConfirmService}
+          onRejectMatch={handleRejectMatch}
+          onSelectService={handleSelectService}
         />
         <WorkflowCanvas
           workflow={workflow}

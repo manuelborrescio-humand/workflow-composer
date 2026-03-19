@@ -274,4 +274,10 @@ export interface ChatMessage {
   role: "user" | "assistant"
   content: string
   isError?: boolean
+  // Interactive matching fields
+  type?: "text" | "confirmation" | "service-list"
+  matchedService?: string
+  services?: { name: string; status: string }[]
+  originalUserText?: string
+  resolved?: boolean
 }
