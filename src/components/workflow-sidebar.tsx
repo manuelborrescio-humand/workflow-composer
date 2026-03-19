@@ -198,14 +198,18 @@ export function WorkflowSidebar({
         <div className="space-y-3 mt-auto">
           {messages.map((msg) => (
             <div key={msg.id}>
-              <p className={`text-[10px] font-medium mb-1 ${msg.role === "user" ? "text-[#606060]" : "text-[#496BE3]"}`}>
+              <p className={`text-[10px] font-medium mb-1 ${
+                msg.role === "user" ? "text-[#606060]" : msg.isError ? "text-[#B91C1C]" : "text-[#496BE3]"
+              }`}>
                 {msg.role === "user" ? "Tú" : "Asistente"}
               </p>
               <div
-                className={`px-3 py-2.5 rounded-xl text-[12px] leading-relaxed ${
+                className={`px-3 py-2.5 rounded-xl text-[12px] leading-relaxed whitespace-pre-wrap ${
                   msg.role === "user"
                     ? "bg-[#F3F3F5] text-[#000]"
-                    : "bg-[#EEF2FF] text-[#496BE3] border border-[#496BE3]/10"
+                    : msg.isError
+                      ? "bg-[#FEF2F2] text-[#B91C1C] border border-[#FECACA]"
+                      : "bg-[#EEF2FF] text-[#496BE3] border border-[#496BE3]/10"
                 }`}
               >
                 {msg.content}

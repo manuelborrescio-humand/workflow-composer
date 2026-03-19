@@ -25,7 +25,7 @@ Roles de aprobación: Jefe directo, Jefe de segundo nivel, Aprobador designado`
 
 export async function POST(request: Request) {
   try {
-    const { userText, currentWorkflow, instanceId } = await request.json()
+    const { userText, currentWorkflow, instanceId, matchedService } = await request.json()
 
     if (!ANTHROPIC_API_KEY) {
       return NextResponse.json(
@@ -85,7 +85,8 @@ REGLAS:
 6. branch puede ser "approved", "rejected" o una condición del branch node
 7. Para approval nodes, siempre incluí los dos outcomes: approved (Cerrada) y rejected (Cancelada)
 8. Usá departamentos y datos reales de la empresa cuando sea relevante
-${currentWorkflow ? "\n9. IMPORTANTE: Modificá el workflow existente sin eliminar pasos existentes, solo agregá o modificá según lo pedido." : ""}
+${matchedService ? `\n9. El servicio trigger DEBE ser exactamente: "${matchedService}". Usá este nombre como el campo "trigger" del workflow.` : ""}
+${currentWorkflow ? `\n${matchedService ? "10" : "9"}. IMPORTANTE: Modificá el workflow existente sin eliminar pasos existentes, solo agregá o modificá según lo pedido.` : ""}
 
 ${currentWorkflow ? `WORKFLOW ACTUAL:\n${JSON.stringify(currentWorkflow, null, 2)}` : ""}
 

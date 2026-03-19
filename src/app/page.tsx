@@ -5,6 +5,7 @@ import { WorkflowTopbar, type EmpresaFullData } from "@/components/workflow-topb
 import { WorkflowSidebar } from "@/components/workflow-sidebar"
 import { WorkflowCanvas } from "@/components/workflow-canvas"
 import { DEFAULT_WORKFLOW, TEMPLATES, type Workflow, type ChatMessage } from "@/lib/workflow-types"
+import { matchService } from "@/lib/service-matcher"
 import { Toaster, toast } from "sonner"
 
 interface EmpresaData {
@@ -29,6 +30,7 @@ export default function WorkflowComposer() {
   const [empresaFull, setEmpresaFull] = useState<EmpresaFullData | undefined>()
   const [isLoadingInstance, setIsLoadingInstance] = useState(false)
 
+  // --- Feature 3: Errors as chat bubbles ---
   const handleLoadInstance = useCallback(async () => {
     if (!instanceId) return
     setIsLoadingInstance(true)
@@ -36,7 +38,13 @@ export default function WorkflowComposer() {
       const res = await fetch(`/api/redash?instanceId=${instanceId}`)
       const data = await res.json()
       if (data.error) {
-        toast.error(data.error)
+        const errorMsg: ChatMessage = {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: `Error al cargar la comunidad: ${data.error}`,
+          isError: true
+        }
+        setMessages(prev => [...prev, errorMsg])
         return
       }
       const nombre = data.instanceName || `Comunidad #${instanceId}`
@@ -64,7 +72,13 @@ export default function WorkflowComposer() {
       })
       toast.success(`Datos cargados: ${data.users?.length || 0} usuarios, ${data.departments?.length || 0} departamentos`)
     } catch {
-      toast.error("Error al cargar datos de la comunidad")
+      const errorMsg: ChatMessage = {
+        id: Date.now().toString(),
+        role: "assistant",
+        content: "Error al conectar con el servidor para cargar datos de la comunidad.",
+        isError: true
+      }
+      setMessages(prev => [...prev, errorMsg])
     } finally {
       setIsLoadingInstance(false)
     }
@@ -79,14 +93,55 @@ export default function WorkflowComposer() {
     setMessages([])
   }, [])
 
+  // --- Feature 1: Service validation before generating ---
   const handleGenerate = useCallback(async (text: string) => {
-    // Add user message
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
       content: text
     }
     setMessages(prev => [...prev, userMsg])
+
+    // Validation: instanceId loaded?
+    if (!instanceId || !empresaFull) {
+      const errorMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Primero cargá una comunidad ingresando el instanceId y haciendo click en \"Cargar\".",
+        isError: true
+      }
+      setMessages(prev => [...prev, errorMsg])
+      return
+    }
+
+    // Validation: loading in progress?
+    if (isLoadingInstance) {
+      const errorMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Esperá a que terminen de cargarse los datos de la comunidad.",
+        isError: true
+      }
+      setMessages(prev => [...prev, errorMsg])
+      return
+    }
+
+    // Validation: match service
+    const match = matchService(text, empresaFull.servicios)
+
+    if (!match) {
+      const serviceList = empresaFull.servicios.map(s => `• ${s.name}`).join("\n")
+      const errorMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `No encontré un servicio que coincida con tu descripción.\n\nPara crear este flujo, primero creá el servicio desde el Catálogo de servicios en Humand.\n\nServicios disponibles en ${empresaFull.nombre}:\n${serviceList}`,
+        isError: true
+      }
+      setMessages(prev => [...prev, errorMsg])
+      return
+    }
+
+    // Matched → proceed with generation
     setIsGenerating(true)
 
     try {
@@ -96,7 +151,8 @@ export default function WorkflowComposer() {
         body: JSON.stringify({
           userText: text,
           currentWorkflow: workflow,
-          instanceId: instanceId || undefined
+          instanceId: instanceId || undefined,
+          matchedService: match.serviceName
         })
       })
 
@@ -106,7 +162,8 @@ export default function WorkflowComposer() {
         const errorMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: `Error: ${data.error}`
+          content: `Error: ${data.error}`,
+          isError: true
         }
         setMessages(prev => [...prev, errorMsg])
       } else if (data.workflow) {
@@ -114,7 +171,7 @@ export default function WorkflowComposer() {
         setWorkflowName(data.workflow.trigger)
         setSelectedTemplateId(null)
         setIsDraft(true)
-        
+
         const successMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
@@ -126,13 +183,21 @@ export default function WorkflowComposer() {
       const errorMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "Error al conectar con el servidor."
+        content: "Error al conectar con el servidor.",
+        isError: true
       }
       setMessages(prev => [...prev, errorMsg])
     } finally {
       setIsGenerating(false)
     }
-  }, [workflow, instanceId])
+  }, [workflow, instanceId, empresaFull, isLoadingInstance])
+
+  // --- Feature 2: Trigger change from dropdown ---
+  const handleTriggerChange = useCallback((newTrigger: string) => {
+    setWorkflow(prev => prev ? { ...prev, trigger: newTrigger } : prev)
+    setWorkflowName(newTrigger)
+    setIsDraft(true)
+  }, [])
 
   const handlePublish = useCallback(() => {
     setIsDraft(false)
@@ -166,7 +231,11 @@ export default function WorkflowComposer() {
           onLoadInstance={handleLoadInstance}
           isLoadingInstance={isLoadingInstance}
         />
-        <WorkflowCanvas workflow={workflow} />
+        <WorkflowCanvas
+          workflow={workflow}
+          services={empresaFull?.servicios}
+          onTriggerChange={handleTriggerChange}
+        />
       </div>
     </div>
   )

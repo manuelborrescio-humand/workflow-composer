@@ -48,13 +48,34 @@ function BranchIcon() {
   )
 }
 
-export function TriggerNode({ trigger }: { trigger: string }) {
+interface TriggerNodeProps {
+  trigger: string
+  onClick?: () => void
+  isDropdownOpen?: boolean
+}
+
+export function TriggerNode({ trigger, onClick, isDropdownOpen }: TriggerNodeProps) {
   return (
-    <div className="flex items-center gap-3 bg-white rounded-2xl border border-[#E8E8E8] shadow-sm w-[240px] px-4 py-3">
+    <div
+      className={`flex items-center gap-3 bg-white rounded-2xl border shadow-sm w-[240px] px-4 py-3 transition-all ${
+        onClick ? "cursor-pointer hover:border-[#496BE3]/40 hover:shadow-md" : ""
+      } ${isDropdownOpen ? "border-[#496BE3] ring-2 ring-[#496BE3]/20" : "border-[#E8E8E8]"}`}
+      onClick={(e) => {
+        if (onClick) {
+          e.stopPropagation()
+          onClick()
+        }
+      }}
+    >
       <div className="w-[36px] h-[36px] rounded-xl bg-[#E8F5E9] flex items-center justify-center shrink-0">
         <LightningIcon />
       </div>
-      <span className="text-[14px] font-semibold text-[#000] leading-tight">{trigger}</span>
+      <span className="text-[14px] font-semibold text-[#000] leading-tight flex-1">{trigger}</span>
+      {onClick && (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#606060" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`shrink-0 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      )}
     </div>
   )
 }

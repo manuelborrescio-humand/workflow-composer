@@ -17,6 +17,8 @@ import { Minus, Plus, Maximize2, Lock } from "lucide-react"
 
 interface WorkflowCanvasProps {
   workflow: Workflow | null
+  services?: { name: string; status: string }[]
+  onTriggerChange?: (newTrigger: string) => void
 }
 
 function buildTree(steps: Step[]): Map<string | null, Step[]> {
@@ -166,12 +168,14 @@ function RenderStep({ step, tree, isLast }: { step: Step; tree: Map<string | nul
   )
 }
 
-export function WorkflowCanvas({ workflow }: WorkflowCanvasProps) {
+export function WorkflowCanvas({ workflow, services, onTriggerChange }: WorkflowCanvasProps) {
   const [zoom, setZoom] = useState(100)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isPanning, setIsPanning] = useState(false)
   const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
+  const [triggerDropdownOpen, setTriggerDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const handleZoomIn = () => setZoom(z => Math.min(z + 10, 200))
   const handleZoomOut = () => setZoom(z => Math.max(z - 10, 25))
@@ -244,6 +248,30 @@ export function WorkflowCanvas({ workflow }: WorkflowCanvasProps) {
     return () => container.removeEventListener("wheel", handleWheel)
   }, [handleWheel])
 
+  // Close dropdown on outside click or Escape
+  useEffect(() => {
+    if (!triggerDropdownOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setTriggerDropdownOpen(false)
+      }
+    }
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setTriggerDropdownOpen(false)
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("keydown", handleEscape)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleEscape)
+    }
+  }, [triggerDropdownOpen])
+
+  // Close dropdown when trigger changes
+  useEffect(() => {
+    setTriggerDropdownOpen(false)
+  }, [workflow?.trigger])
+
   const canvasBackground = {
     background: "radial-gradient(circle, #DDD 1px, transparent 1px)",
     backgroundSize: "24px 24px",
@@ -287,7 +315,53 @@ export function WorkflowCanvas({ workflow }: WorkflowCanvasProps) {
           minHeight: "max-content"
         }}
       >
-        <TriggerNode trigger={workflow.trigger} />
+        <div className="relative" ref={dropdownRef}>
+          <TriggerNode
+            trigger={workflow.trigger}
+            onClick={services && services.length > 0 ? () => setTriggerDropdownOpen(!triggerDropdownOpen) : undefined}
+            isDropdownOpen={triggerDropdownOpen}
+          />
+          {triggerDropdownOpen && services && onTriggerChange && (
+            <div
+              className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[280px] bg-white rounded-2xl border border-[#E8E8E8] shadow-lg z-50 max-h-[300px] overflow-auto py-1 animate-in fade-in slide-in-from-top-1 duration-150"
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <p className="text-[10px] text-[#606060] font-semibold uppercase tracking-wider px-4 pt-3 pb-2">
+                Cambiar disparador
+              </p>
+              {services.map((service) => (
+                <button
+                  key={service.name}
+                  onClick={() => {
+                    onTriggerChange(service.name)
+                    setTriggerDropdownOpen(false)
+                  }}
+                  className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-[#F7F7F7] transition-colors ${
+                    service.name === workflow.trigger ? "bg-[#EEF2FF]" : ""
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${
+                    service.status === "ENABLED" ? "bg-[#16A34A]" : "bg-[#D1D5DB]"
+                  }`} />
+                  <span className={`text-[13px] flex-1 ${
+                    service.name === workflow.trigger ? "font-semibold text-[#496BE3]" : "text-[#000]"
+                  }`}>
+                    {service.name}
+                  </span>
+                  {service.name === workflow.trigger && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#496BE3" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  )}
+                </button>
+              ))}
+              {services.length === 0 && (
+                <p className="text-[12px] text-[#606060] px-4 py-3 text-center">No hay servicios disponibles</p>
+              )}
+            </div>
+          )}
+        </div>
         <Connector />
         {rootSteps.map((step, i) => (
           <RenderStep
