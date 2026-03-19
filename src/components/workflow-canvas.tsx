@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import type { Workflow, Step } from "@/lib/workflow-types"
 import {
   TriggerNode,
@@ -21,7 +21,7 @@ interface WorkflowCanvasProps {
 
 function buildTree(steps: Step[]): Map<string | null, Step[]> {
   const tree = new Map<string | null, Step[]>()
-  
+
   steps.forEach(step => {
     const key = step.parent
     if (!tree.has(key)) {
@@ -29,21 +29,21 @@ function buildTree(steps: Step[]): Map<string | null, Step[]> {
     }
     tree.get(key)!.push(step)
   })
-  
+
   return tree
 }
 
 function RenderStep({ step, tree, isLast }: { step: Step; tree: Map<string | null, Step[]>; isLast: boolean }) {
   const children = tree.get(step.id) || []
-  
+
   // For approval nodes, split by approved/rejected
   const approvedChildren = children.filter(c => c.branch === "approved")
   const rejectedChildren = children.filter(c => c.branch === "rejected")
-  
+
   // For branch nodes, group by branch condition
   const isBranch = step.type === "branch"
   const branchConditions = isBranch ? step.conditions || [] : []
-  
+
   const renderNode = () => {
     switch (step.type) {
       case "approval":
@@ -72,10 +72,10 @@ function RenderStep({ step, tree, isLast }: { step: Step; tree: Map<string | nul
           <div className="flex flex-col items-center">
             <Connector />
             {approvedChildren.map((child, i) => (
-              <RenderStep 
-                key={child.id} 
-                step={child} 
-                tree={tree} 
+              <RenderStep
+                key={child.id}
+                step={child}
+                tree={tree}
                 isLast={i === approvedChildren.length - 1}
               />
             ))}
@@ -85,10 +85,10 @@ function RenderStep({ step, tree, isLast }: { step: Step; tree: Map<string | nul
           <div className="flex flex-col items-center">
             <Connector />
             {rejectedChildren.map((child, i) => (
-              <RenderStep 
-                key={child.id} 
-                step={child} 
-                tree={tree} 
+              <RenderStep
+                key={child.id}
+                step={child}
+                tree={tree}
                 isLast={i === rejectedChildren.length - 1}
               />
             ))}
@@ -117,10 +117,10 @@ function RenderStep({ step, tree, isLast }: { step: Step; tree: Map<string | nul
               <div key={cond} className="flex flex-col items-center">
                 <Connector />
                 {branchChildren.map((child, i) => (
-                  <RenderStep 
-                    key={child.id} 
-                    step={child} 
-                    tree={tree} 
+                  <RenderStep
+                    key={child.id}
+                    step={child}
+                    tree={tree}
                     isLast={i === branchChildren.length - 1}
                   />
                 ))}
@@ -141,10 +141,10 @@ function RenderStep({ step, tree, isLast }: { step: Step; tree: Map<string | nul
         <>
           <Connector />
           {children.map((child, i) => (
-            <RenderStep 
-              key={child.id} 
-              step={child} 
-              tree={tree} 
+            <RenderStep
+              key={child.id}
+              step={child}
+              tree={tree}
               isLast={i === children.length - 1}
             />
           ))}
@@ -168,20 +168,93 @@ function RenderStep({ step, tree, isLast }: { step: Step; tree: Map<string | nul
 
 export function WorkflowCanvas({ workflow }: WorkflowCanvasProps) {
   const [zoom, setZoom] = useState(100)
+  const [pan, setPan] = useState({ x: 0, y: 0 })
+  const [isPanning, setIsPanning] = useState(false)
+  const panStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  const handleZoomIn = () => setZoom(Math.min(zoom + 10, 150))
-  const handleZoomOut = () => setZoom(Math.max(zoom - 10, 50))
-  const handleReset = () => setZoom(100)
+  const handleZoomIn = () => setZoom(z => Math.min(z + 10, 200))
+  const handleZoomOut = () => setZoom(z => Math.max(z - 10, 25))
+  const handleReset = () => {
+    setZoom(100)
+    setPan({ x: 0, y: 0 })
+  }
+
+  // Mouse drag to pan
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only pan on left click, ignore clicks on interactive elements
+    if (e.button !== 0) return
+    const target = e.target as HTMLElement
+    if (target.closest("button")) return
+
+    setIsPanning(true)
+    panStart.current = {
+      x: e.clientX,
+      y: e.clientY,
+      panX: pan.x,
+      panY: pan.y
+    }
+    e.preventDefault()
+  }, [pan])
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning) return
+    const dx = e.clientX - panStart.current.x
+    const dy = e.clientY - panStart.current.y
+    setPan({
+      x: panStart.current.panX + dx,
+      y: panStart.current.panY + dy
+    })
+  }, [isPanning])
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false)
+  }, [])
+
+  // Scroll wheel to zoom (towards cursor)
+  const handleWheel = useCallback((e: WheelEvent) => {
+    e.preventDefault()
+    const container = containerRef.current
+    if (!container) return
+
+    const rect = container.getBoundingClientRect()
+    const cursorX = e.clientX - rect.left
+    const cursorY = e.clientY - rect.top
+
+    const delta = e.deltaY > 0 ? -5 : 5
+
+    setZoom(prevZoom => {
+      const newZoom = Math.min(Math.max(prevZoom + delta, 25), 200)
+      const scaleFactor = newZoom / prevZoom
+
+      setPan(prevPan => ({
+        x: cursorX - scaleFactor * (cursorX - prevPan.x),
+        y: cursorY - scaleFactor * (cursorY - prevPan.y)
+      }))
+
+      return newZoom
+    })
+  }, [])
+
+  // Attach wheel event with passive: false to allow preventDefault
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    container.addEventListener("wheel", handleWheel, { passive: false })
+    return () => container.removeEventListener("wheel", handleWheel)
+  }, [handleWheel])
+
+  const canvasBackground = {
+    background: "radial-gradient(circle, #D4D4D8 1px, transparent 1px)",
+    backgroundSize: "24px 24px",
+    backgroundColor: "#F4F4F5"
+  }
 
   if (!workflow) {
     return (
-      <div 
+      <div
         className="flex-1 flex flex-col items-center justify-center"
-        style={{
-          background: "radial-gradient(circle, #D4D4D8 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
-          backgroundColor: "#F4F4F5"
-        }}
+        style={canvasBackground}
       >
         <div className="text-6xl mb-4">{"🗂️"}</div>
         <p className="text-[15px] text-[#6B7280]">El workflow aparece acá</p>
@@ -196,24 +269,30 @@ export function WorkflowCanvas({ workflow }: WorkflowCanvasProps) {
   const rootSteps = tree.get(null) || []
 
   return (
-    <div 
-      className="flex-1 overflow-auto relative"
-      style={{
-        background: "radial-gradient(circle, #D4D4D8 1px, transparent 1px)",
-        backgroundSize: "24px 24px",
-        backgroundColor: "#F4F4F5"
-      }}
+    <div
+      ref={containerRef}
+      className={`flex-1 overflow-hidden relative select-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`}
+      style={canvasBackground}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
     >
-      <div 
-        className="flex flex-col items-center py-8 min-h-full"
-        style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center" }}
+      <div
+        className="flex flex-col items-center py-8"
+        style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
+          transformOrigin: "0 0",
+          minWidth: "max-content",
+          minHeight: "max-content"
+        }}
       >
         <TriggerNode trigger={workflow.trigger} />
         <Connector />
         {rootSteps.map((step, i) => (
-          <RenderStep 
-            key={step.id} 
-            step={step} 
+          <RenderStep
+            key={step.id}
+            step={step}
             tree={tree}
             isLast={i === rootSteps.length - 1}
           />
@@ -222,21 +301,21 @@ export function WorkflowCanvas({ workflow }: WorkflowCanvasProps) {
       </div>
 
       {/* Zoom controls */}
-      <div className="fixed bottom-4 right-4 flex items-center gap-1 bg-card rounded-full px-2 py-1 shadow-md border border-border">
-        <button 
+      <div className="absolute bottom-4 right-4 flex items-center gap-1 bg-card rounded-full px-2 py-1 shadow-md border border-border">
+        <button
           onClick={handleZoomOut}
           className="p-1 hover:bg-muted rounded-full transition-colors"
           aria-label="Alejar"
         >
           <Minus size={16} className="text-muted-foreground" />
         </button>
-        <button 
+        <button
           onClick={handleReset}
           className="px-2 text-xs text-muted-foreground hover:text-foreground"
         >
           {zoom}%
         </button>
-        <button 
+        <button
           onClick={handleZoomIn}
           className="p-1 hover:bg-muted rounded-full transition-colors"
           aria-label="Acercar"
@@ -244,14 +323,14 @@ export function WorkflowCanvas({ workflow }: WorkflowCanvasProps) {
           <Plus size={16} className="text-muted-foreground" />
         </button>
         <div className="w-px h-4 bg-border mx-1" />
-        <button 
+        <button
           onClick={handleReset}
           className="p-1 hover:bg-muted rounded-full transition-colors"
           aria-label="Ajustar"
         >
           <Maximize2 size={16} className="text-muted-foreground" />
         </button>
-        <button 
+        <button
           className="p-1 hover:bg-muted rounded-full transition-colors"
           aria-label="Bloquear"
         >
