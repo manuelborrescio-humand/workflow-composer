@@ -245,9 +245,9 @@ export function WorkflowCanvas({ workflow }: WorkflowCanvasProps) {
   }, [handleWheel])
 
   const canvasBackground = {
-    background: "radial-gradient(circle, #D4D4D8 1px, transparent 1px)",
+    background: "radial-gradient(circle, #DDD 1px, transparent 1px)",
     backgroundSize: "24px 24px",
-    backgroundColor: "#F4F4F5"
+    backgroundColor: "#F7F7F7"
   }
 
   if (!workflow) {
@@ -257,7 +257,7 @@ export function WorkflowCanvas({ workflow }: WorkflowCanvasProps) {
         style={canvasBackground}
       >
         <div className="text-6xl mb-4">{"🗂️"}</div>
-        <p className="text-[15px] text-[#6B7280]">El workflow aparece acá</p>
+        <p className="text-[15px] text-[#606060]">El workflow aparece acá</p>
         <p className="text-[12px] text-muted-foreground mt-1">
           Elegí un template o describí el flujo
         </p>

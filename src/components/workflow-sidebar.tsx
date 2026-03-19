@@ -71,14 +71,14 @@ export function WorkflowSidebar({
   }
 
   return (
-    <div className="w-[320px] bg-white border-r border-[#E5E7EB] flex flex-col h-full shadow-sm">
+    <div className="w-[320px] bg-white border-r border-[#DDD] flex flex-col h-full shadow-sm">
       {/* Templates (collapsible) */}
-      <div className="border-b border-[#E5E7EB]">
+      <div className="border-b border-[#DDD]">
         <button
           onClick={() => setTemplatesOpen(!templatesOpen)}
-          className="w-full flex items-center justify-between px-5 py-3 hover:bg-[#F8F9FA] transition-colors"
+          className="w-full flex items-center justify-between px-5 py-3 hover:bg-[#F7F7F7] transition-colors"
         >
-          <p className="text-[11px] uppercase text-[#9CA3AF] font-semibold tracking-wider">
+          <p className="text-[11px] uppercase text-[#606060] font-semibold tracking-wider">
             Templates
           </p>
           <svg
@@ -86,7 +86,7 @@ export function WorkflowSidebar({
             height="16"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#9CA3AF"
+            stroke="#606060"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -103,19 +103,19 @@ export function WorkflowSidebar({
                 onClick={() => onSelectTemplate(template.workflow)}
                 className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-150 ${
                   selectedTemplateId === template.id
-                    ? "bg-[#EEF0FB] border border-[#496BE3]/30 shadow-sm"
-                    : "bg-white border border-transparent hover:bg-[#F8F9FA] hover:border-[#E5E7EB]"
+                    ? "bg-[#EEF2FF] border border-[#496BE3]/30 shadow-sm"
+                    : "bg-white border border-transparent hover:bg-[#F7F7F7] hover:border-[#DDD]"
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   <span className="text-lg">{template.emoji}</span>
                   <div>
                     <p className={`text-[12.5px] font-medium ${
-                      selectedTemplateId === template.id ? "text-[#496BE3]" : "text-[#1A1A2E]"
+                      selectedTemplateId === template.id ? "text-[#496BE3]" : "text-[#000]"
                     }`}>
                       {template.title}
                     </p>
-                    <p className="text-[10.5px] text-[#9CA3AF]">
+                    <p className="text-[10.5px] text-[#606060]">
                       {template.description}
                     </p>
                   </div>
@@ -127,8 +127,8 @@ export function WorkflowSidebar({
       </div>
 
       {/* Instance selector + Company snapshot */}
-      <div className="px-5 py-3 border-b border-[#E5E7EB]">
-        <p className="text-[11px] uppercase text-[#9CA3AF] font-semibold mb-2 tracking-wider">
+      <div className="px-5 py-3 border-b border-[#DDD]">
+        <p className="text-[11px] uppercase text-[#606060] font-semibold mb-2 tracking-wider">
           Comunidad
         </p>
         <div className="flex gap-2">
@@ -137,7 +137,7 @@ export function WorkflowSidebar({
             value={instanceId || ""}
             onChange={(e) => onInstanceIdChange?.(e.target.value)}
             placeholder="instanceId"
-            className="flex-1 px-3 py-2 bg-[#F8F9FA] border border-[#E5E7EB] rounded-lg text-[12px] text-[#1A1A2E] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#496BE3]/20 focus:border-[#496BE3] transition-all"
+            className="flex-1 px-3 py-2 bg-[#F7F7F7] border border-[#DDD] rounded-lg text-[12px] text-[#000] placeholder:text-[#606060] focus:outline-none focus:ring-2 focus:ring-[#496BE3]/20 focus:border-[#496BE3] transition-all"
           />
           <button
             onClick={onLoadInstance}
@@ -145,27 +145,27 @@ export function WorkflowSidebar({
             className={`px-4 py-2 rounded-lg text-[12px] font-semibold transition-all duration-150 ${
               instanceId && !isLoadingInstance
                 ? "bg-[#496BE3] text-white hover:bg-[#3D5CC7] shadow-sm"
-                : "bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed"
+                : "bg-[#F3F3F5] text-[#606060] cursor-not-allowed"
             }`}
           >
             {isLoadingInstance ? "..." : "Cargar"}
           </button>
         </div>
         {empresa && (
-          <div className="bg-gradient-to-br from-[#F8F9FA] to-[#EEF0FB] rounded-xl p-3.5 border border-[#E5E7EB] mt-2.5">
-            <p className="text-[13px] font-semibold text-[#1A1A2E]">
+          <div className="bg-gradient-to-br from-[#F7F7F7] to-[#EEF2FF] rounded-xl p-3.5 border border-[#DDD] mt-2.5">
+            <p className="text-[13px] font-semibold text-[#000]">
               {empresa.nombre}
             </p>
             <div className="mt-2 space-y-1">
-              <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
+              <div className="flex items-center gap-2 text-[11px] text-[#606060]">
                 <span className="w-4 text-center text-[#496BE3]">S</span>
                 <span>{empresa.servicios} servicios</span>
               </div>
-              <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
+              <div className="flex items-center gap-2 text-[11px] text-[#606060]">
                 <span className="w-4 text-center text-[#496BE3]">D</span>
                 <span>{empresa.departamentos.length} departamentos</span>
               </div>
-              <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
+              <div className="flex items-center gap-2 text-[11px] text-[#606060]">
                 <span className="w-4 text-center text-[#496BE3]">U</span>
                 <span>{empresa.usuarios} usuarios ({empresa.agentes} agentes)</span>
               </div>
@@ -187,10 +187,10 @@ export function WorkflowSidebar({
                 textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + "px"
               }
             }}
-            className="w-full text-left px-4 py-3.5 rounded-xl border border-dashed border-[#D1D5DB] hover:border-[#496BE3]/40 hover:bg-[#EEF0FB]/30 transition-all duration-150 group"
+            className="w-full text-left px-4 py-3.5 rounded-xl border border-dashed border-[#DDD] hover:border-[#496BE3]/40 hover:bg-[#EEF2FF]/30 transition-all duration-150 group"
           >
-            <p className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wider mb-1.5 group-hover:text-[#496BE3]">Ejemplo</p>
-            <p className="text-[12.5px] text-[#6B7280] leading-relaxed group-hover:text-[#496BE3]">
+            <p className="text-[11px] font-semibold text-[#606060] uppercase tracking-wider mb-1.5 group-hover:text-[#496BE3]">Ejemplo</p>
+            <p className="text-[12.5px] text-[#606060] leading-relaxed group-hover:text-[#496BE3]">
               Cuando un empleado solicita vacaciones, que lo apruebe su jefe directo.
             </p>
           </button>
@@ -198,14 +198,14 @@ export function WorkflowSidebar({
         <div className="space-y-3 mt-auto">
           {messages.map((msg) => (
             <div key={msg.id}>
-              <p className={`text-[10px] font-medium mb-1 ${msg.role === "user" ? "text-[#9CA3AF]" : "text-[#496BE3]"}`}>
+              <p className={`text-[10px] font-medium mb-1 ${msg.role === "user" ? "text-[#606060]" : "text-[#496BE3]"}`}>
                 {msg.role === "user" ? "Tú" : "Asistente"}
               </p>
               <div
                 className={`px-3 py-2.5 rounded-xl text-[12px] leading-relaxed ${
                   msg.role === "user"
-                    ? "bg-[#F3F4F6] text-[#1A1A2E]"
-                    : "bg-[#EEF0FB] text-[#496BE3] border border-[#496BE3]/10"
+                    ? "bg-[#F3F3F5] text-[#000]"
+                    : "bg-[#EEF2FF] text-[#496BE3] border border-[#496BE3]/10"
                 }`}
               >
                 {msg.content}
@@ -218,9 +218,9 @@ export function WorkflowSidebar({
 
 
       {/* Input area */}
-      <div className="px-4 py-3 border-t border-[#E5E7EB] bg-white">
-        <div className={`flex items-end gap-2 bg-[#F8F9FA] border rounded-xl px-3 py-2 transition-all ${
-          isGenerating ? "border-[#E5E7EB]" : "border-[#E5E7EB] focus-within:ring-2 focus-within:ring-[#496BE3]/20 focus-within:border-[#496BE3]"
+      <div className="px-4 py-3 border-t border-[#DDD] bg-white">
+        <div className={`flex items-end gap-2 bg-[#F7F7F7] border rounded-xl px-3 py-2 transition-all ${
+          isGenerating ? "border-[#DDD]" : "border-[#DDD] focus-within:ring-2 focus-within:ring-[#496BE3]/20 focus-within:border-[#496BE3]"
         }`}>
           <textarea
             ref={textareaRef}
@@ -229,7 +229,7 @@ export function WorkflowSidebar({
             onKeyDown={handleKeyDown}
             placeholder="Describe el flujo de trabajo..."
             rows={1}
-            className="flex-1 bg-transparent text-[12.5px] text-[#1A1A2E] resize-none placeholder:text-[#9CA3AF] focus:outline-none leading-relaxed"
+            className="flex-1 bg-transparent text-[12.5px] text-[#000] resize-none placeholder:text-[#606060] focus:outline-none leading-relaxed"
             style={{ minHeight: "22px", maxHeight: "120px" }}
             disabled={isGenerating}
           />
@@ -239,7 +239,7 @@ export function WorkflowSidebar({
             className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 ${
               inputText.trim() && !isGenerating
                 ? "bg-[#496BE3] text-white hover:bg-[#3D5CC7]"
-                : "bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed"
+                : "bg-[#DDD] text-[#606060] cursor-not-allowed"
             }`}
           >
             {isGenerating ? (

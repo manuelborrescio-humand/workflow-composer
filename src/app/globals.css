@@ -4,38 +4,38 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #F8F9FA;
-  --foreground: #1A1A2E;
+  --background: #F7F7F7;
+  --foreground: #000000;
   --card: #FFFFFF;
-  --card-foreground: #1A1A2E;
+  --card-foreground: #000000;
   --popover: #FFFFFF;
-  --popover-foreground: #1A1A2E;
+  --popover-foreground: #000000;
   --primary: #496BE3;
   --primary-foreground: #FFFFFF;
-  --secondary: #EEF0FB;
+  --secondary: #EEF2FF;
   --secondary-foreground: #496BE3;
-  --muted: #F3F4F6;
-  --muted-foreground: #6B7280;
+  --muted: #F3F3F5;
+  --muted-foreground: #606060;
   --accent: #496BE3;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #E5E7EB;
-  --input: #E5E7EB;
+  --border: #DDDDDD;
+  --input: #DDDDDD;
   --ring: #496BE3;
   --chart-1: #496BE3;
   --chart-2: #10B981;
   --chart-3: #F59E0B;
   --chart-4: #3B82F6;
   --chart-5: #EF4444;
-  --radius: 0.5rem;
+  --radius: 1rem;
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #1A1A2E;
+  --sidebar-foreground: #000000;
   --sidebar-primary: #496BE3;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #EEF0FB;
+  --sidebar-accent: #EEF2FF;
   --sidebar-accent-foreground: #496BE3;
-  --sidebar-border: #E5E7EB;
+  --sidebar-border: #DDDDDD;
   --sidebar-ring: #496BE3;
 }
 
@@ -75,7 +75,7 @@
 }
 
 @theme inline {
-  --font-sans: 'Inter', 'Inter Fallback', system-ui, sans-serif;
+  --font-sans: 'SF UI', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --color-background: var(--background);
   --color-foreground: var(--foreground);

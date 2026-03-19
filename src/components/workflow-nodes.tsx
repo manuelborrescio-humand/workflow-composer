@@ -9,12 +9,12 @@ interface NodeProps {
 
 export function TriggerNode({ trigger }: { trigger: string }) {
   return (
-    <div className="flex items-center gap-3 bg-card rounded-xl border-[1.5px] border-border shadow-sm w-[260px] p-3">
+    <div className="flex items-center gap-3 bg-card rounded-2xl border border-[#DDD] shadow-sm w-[260px] p-3">
       <div className="w-[34px] h-[34px] rounded-lg bg-[#22C55E] flex items-center justify-center text-lg">
         {"⚡"}
       </div>
       <div className="flex flex-col">
-        <span className="text-[10px] text-[#A1A1AA]">Disparador</span>
+        <span className="text-[10px] text-[#606060]">Disparador</span>
         <span className="text-[13px] font-bold text-foreground">{trigger}</span>
       </div>
     </div>
@@ -24,22 +24,22 @@ export function TriggerNode({ trigger }: { trigger: string }) {
 export function ApprovalNode({ step }: NodeProps) {
   if (!step) return null
   return (
-    <div className="bg-card rounded-xl border-[1.5px] border-border shadow-sm w-[260px] overflow-hidden">
+    <div className="bg-card rounded-2xl border border-[#DDD] shadow-sm w-[260px] overflow-hidden">
       <div className="flex items-center gap-3 p-3">
         <div className="w-[34px] h-[34px] rounded-lg bg-[#6366F1] flex items-center justify-center text-lg">
           {"✅"}
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] text-[#A1A1AA]">Solicitar aprobación</span>
+          <span className="text-[10px] text-[#606060]">Solicitar aprobación</span>
           <span className="text-[13px] font-bold text-foreground">{step.label}</span>
         </div>
       </div>
-      <div className="border-t border-[#F3F4F6] px-[14px] py-[5px] pb-[10px]">
-        <div className="text-[10px] text-[#A1A1AA]">
+      <div className="border-t border-[#F3F3F5] px-[14px] py-[5px] pb-[10px]">
+        <div className="text-[10px] text-[#606060]">
           {"👤"} {step.approvers?.join(", ") || "Sin aprobadores"}
         </div>
         {step.condition && (
-          <div className="text-[10px] text-[#A1A1AA]">{step.condition}</div>
+          <div className="text-[10px] text-[#606060]">{step.condition}</div>
         )}
       </div>
     </div>
@@ -49,19 +49,19 @@ export function ApprovalNode({ step }: NodeProps) {
 export function UpdateNode({ step }: NodeProps) {
   if (!step) return null
   return (
-    <div className="bg-card rounded-xl border-[1.5px] border-border shadow-sm w-[260px] overflow-hidden">
+    <div className="bg-card rounded-2xl border border-[#DDD] shadow-sm w-[260px] overflow-hidden">
       <div className="flex items-center gap-3 p-3">
         <div className="w-[34px] h-[34px] rounded-lg bg-[#10B981] flex items-center justify-center text-lg">
           {"🔄"}
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] text-[#A1A1AA]">Actualizar solicitud</span>
+          <span className="text-[10px] text-[#606060]">Actualizar solicitud</span>
           <span className="text-[13px] font-bold text-foreground">{step.label}</span>
         </div>
       </div>
       {step.status && (
-        <div className="border-t border-[#F3F4F6] px-[14px] py-[5px] pb-[10px]">
-          <div className="text-[10px] text-[#A1A1AA]">
+        <div className="border-t border-[#F3F3F5] px-[14px] py-[5px] pb-[10px]">
+          <div className="text-[10px] text-[#606060]">
             Estado → {step.status}
           </div>
         </div>
@@ -73,7 +73,7 @@ export function UpdateNode({ step }: NodeProps) {
 export function BranchNode({ step }: NodeProps) {
   if (!step) return null
   return (
-    <div className="bg-card rounded-xl border-[1.5px] border-border shadow-sm w-[260px] overflow-hidden">
+    <div className="bg-card rounded-2xl border border-[#DDD] shadow-sm w-[260px] overflow-hidden">
       <div className="flex items-center gap-3 p-3">
         <div className="w-[34px] h-[34px] rounded-lg bg-[#F59E0B] flex items-center justify-center">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -84,16 +84,16 @@ export function BranchNode({ step }: NodeProps) {
           </svg>
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] text-[#A1A1AA]">Ramas</span>
+          <span className="text-[10px] text-[#606060]">Ramas</span>
           <span className="text-[13px] font-bold text-foreground">{step.label}</span>
         </div>
       </div>
       {step.conditions && step.conditions.length > 0 && (
-        <div className="border-t border-[#F3F4F6] px-[14px] py-[5px] pb-[10px]">
+        <div className="border-t border-[#F3F3F5] px-[14px] py-[5px] pb-[10px]">
           {step.conditions.map((cond, i) => (
-            <div key={i} className="text-[10px] text-[#A1A1AA]">{cond}</div>
+            <div key={i} className="text-[10px] text-[#606060]">{cond}</div>
           ))}
-          <div className="text-[10px] text-[#D1D5DB]">Rama por defecto</div>
+          <div className="text-[10px] text-[#DDD]">Rama por defecto</div>
         </div>
       )}
     </div>
@@ -102,8 +102,8 @@ export function BranchNode({ step }: NodeProps) {
 
 export function EndNode() {
   return (
-    <div className="border-dashed border-[1.5px] border-[#D4D4D8] bg-[#F9FAFB] rounded-lg px-5 py-[7px]">
-      <span className="text-[11px] text-[#9CA3AF]">Fin de flujo</span>
+    <div className="border-dashed border border-[#DDD] bg-[#F7F7F7] rounded-2xl px-5 py-[7px]">
+      <span className="text-[11px] text-[#606060]">Fin de flujo</span>
     </div>
   )
 }
@@ -111,7 +111,7 @@ export function EndNode() {
 export function Connector({ height = 20 }: { height?: number }) {
   return (
     <div 
-      className="w-[2px] bg-[#D4D4D8] mx-auto"
+      className="w-[2px] bg-[#DDD] mx-auto"
       style={{ height: `${height}px` }}
     />
   )

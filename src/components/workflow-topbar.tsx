@@ -69,13 +69,13 @@ export function WorkflowTopbar({
   }
 
   return (
-    <header className="h-14 bg-white border-b border-[#E5E7EB] flex items-center px-5 gap-4 shadow-sm">
+    <header className="h-14 bg-white border-b border-[#DDD] flex items-center px-5 gap-4 shadow-sm">
       {/* Back button */}
       <button
-        className="p-1.5 hover:bg-[#F3F4F6] rounded-lg transition-colors"
+        className="p-1.5 hover:bg-[#F3F3F5] rounded-lg transition-colors"
         aria-label="Volver"
       >
-        <ArrowLeft size={18} className="text-[#6B7280]" />
+        <ArrowLeft size={18} className="text-[#606060]" />
       </button>
 
       {/* Workflow name */}
@@ -87,13 +87,13 @@ export function WorkflowTopbar({
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
-            className="text-[14px] font-semibold text-[#1A1A2E] bg-[#F8F9FA] px-3 py-1.5 rounded-lg border border-[#496BE3] focus:outline-none focus:ring-2 focus:ring-[#496BE3]/20"
+            className="text-[14px] font-semibold text-[#000] bg-[#F7F7F7] px-3 py-1.5 rounded-lg border border-[#496BE3] focus:outline-none focus:ring-2 focus:ring-[#496BE3]/20"
             autoFocus
           />
         ) : (
           <button
             onClick={() => setIsEditing(true)}
-            className="text-[14px] font-semibold text-[#1A1A2E] hover:bg-[#F8F9FA] px-3 py-1.5 rounded-lg transition-colors"
+            className="text-[14px] font-semibold text-[#000] hover:bg-[#F7F7F7] px-3 py-1.5 rounded-lg transition-colors"
           >
             {workflowName}
           </button>
@@ -119,7 +119,7 @@ export function WorkflowTopbar({
         {/* View company data */}
         <Dialog open={showDataModal} onOpenChange={setShowDataModal}>
           <DialogTrigger asChild>
-            <button className="flex items-center gap-1.5 px-3 py-2 text-[12px] text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#1A1A2E] rounded-lg transition-all font-medium">
+            <button className="flex items-center gap-1.5 px-3 py-2 text-[12px] text-[#606060] hover:bg-[#F3F3F5] hover:text-[#000] rounded-lg transition-all font-medium">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9h18M3 15h18M12 3v18"/></svg>
               Ver datos
             </button>
@@ -215,19 +215,19 @@ export function WorkflowTopbar({
         <button
           onClick={handleExport}
           disabled={!workflow}
-          className="flex items-center gap-1.5 px-3 py-2 text-[12px] text-[#6B7280] hover:bg-[#F3F4F6] hover:text-[#1A1A2E] rounded-lg transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-3 py-2 text-[12px] text-[#606060] hover:bg-[#F3F3F5] hover:text-[#000] rounded-lg transition-all font-medium disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <FileJson size={14} />
           JSON
         </button>
 
-        <div className="w-px h-5 bg-[#E5E7EB]" />
+        <div className="w-px h-5 bg-[#DDD]" />
 
         {/* Publicar */}
         <button
           onClick={onPublish}
           disabled={!workflow}
-          className="px-5 py-2 text-[12px] font-semibold text-white bg-[#496BE3] rounded-lg hover:bg-[#3D5CC7] transition-all shadow-sm shadow-[#496BE3]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+          className="px-6 py-2 text-[14px] font-semibold text-white bg-[#496BE3] rounded-2xl hover:bg-[#3D5CC7] transition-all shadow-sm shadow-[#496BE3]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
           Publicar
         </button>
