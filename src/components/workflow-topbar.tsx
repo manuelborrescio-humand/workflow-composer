@@ -79,7 +79,7 @@ export function WorkflowTopbar({
       </button>
 
       {/* Workflow name */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-2">
         {isEditing ? (
           <input
             type="text"
@@ -87,25 +87,31 @@ export function WorkflowTopbar({
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleSave}
             onKeyDown={handleKeyDown}
-            className="text-[14px] font-semibold text-[#000] bg-[#F7F7F7] px-3 py-1.5 rounded-lg border border-[#496BE3] focus:outline-none focus:ring-2 focus:ring-[#496BE3]/20"
+            className="text-[16px] font-bold text-[#000] bg-[#F7F7F7] px-3 py-1.5 rounded-lg border border-[#496BE3] focus:outline-none focus:ring-2 focus:ring-[#496BE3]/20"
             autoFocus
           />
         ) : (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="text-[14px] font-semibold text-[#000] hover:bg-[#F7F7F7] px-3 py-1.5 rounded-lg transition-colors"
-          >
-            {workflowName}
-          </button>
+          <>
+            <span className="text-[16px] font-bold text-[#000]">
+              {workflowName}
+            </span>
+            <button
+              onClick={() => setIsEditing(true)}
+              className="p-1 hover:bg-[#F3F3F5] rounded-lg transition-colors"
+              aria-label="Editar nombre"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#606060" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </button>
+          </>
         )}
 
         {/* Status badge */}
         {isDraft ? (
-          <span className="px-2.5 py-1 text-[10px] font-semibold rounded-full bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A]">
+          <span className="px-3 py-0.5 text-[12px] font-semibold rounded-full bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A]">
             Borrador
           </span>
         ) : (
-          <span className="px-2.5 py-1 text-[10px] font-semibold rounded-full bg-[#D1FAE5] text-[#059669] border border-[#A7F3D0]">
+          <span className="px-3 py-0.5 text-[12px] font-semibold rounded-full text-[#16A34A]">
             Activo
           </span>
         )}
